@@ -46,6 +46,37 @@
 						"list-name": "Do alert",
 						"display-text": "Do alert",
 						"description": "Do a dummy alert."
+					},
+					"create-model": {
+						"list-name": "Create model",
+						"display-text": "Create model from [i]{0}[/i]",
+						"description": "Create a 3D model instance from a file path.",
+						"params": {
+							"model-path": {
+								"name": "Model path",
+								"desc": "Path to the 3D model file."
+							}
+						}
+					},
+					"play-animation": {
+						"list-name": "Play animation",
+						"display-text": "Play animation [i]{0}[/i] (loop: [i]{1}[/i])",
+						"description": "Play an animation on the current model.",
+						"params": {
+							"animation-name": {
+								"name": "Animation name",
+								"desc": "Name of the animation to play."
+							},
+							"loop": {
+								"name": "Loop",
+								"desc": "Whether to loop the animation."
+							}
+						}
+					},
+					"stop-animation": {
+						"list-name": "Stop animation",
+						"display-text": "Stop animation",
+						"description": "Stop the current animation."
 					}
 				},
 				"expressions": {

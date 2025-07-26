@@ -125,3 +125,4 @@ These schemas provide validation and structure for:
 - The `addon.json` file lists all files that must be included in the plugin
 - WebGL context is accessed through Construct 3's renderer system
 - The plugin integrates with Construct 3's world coordinate system for proper rendering
+- **IMPORTANT**: Always check the rendera types in `rendera-types/modules/index.d.ts` or reference implementation files for correct function names and signatures when using the rendera API. Do not assume function names - verify them against the type definitions.

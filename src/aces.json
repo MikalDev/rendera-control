@@ -20,6 +20,35 @@
 				"id": "do-alert",
 				"scriptName": "Alert",
 				"highlight": true
+			},
+			{
+				"id": "create-model",
+				"scriptName": "CreateModel",
+				"highlight": true,
+				"params": [
+					{
+						"id": "model-path",
+						"type": "string"
+					}
+				]
+			},
+			{
+				"id": "play-animation",
+				"scriptName": "PlayAnimation",
+				"params": [
+					{
+						"id": "animation-name",
+						"type": "string"
+					},
+					{
+						"id": "loop",
+						"type": "boolean"
+					}
+				]
+			},
+			{
+				"id": "stop-animation",
+				"scriptName": "StopAnimation"
 			}
 		],
 		"expressions": [

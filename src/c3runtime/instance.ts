@@ -9,27 +9,62 @@ const C3 = globalThis.C3;
 class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 {
 	_testProperty: number;
+	_models: Map<string, Model>;
+	_currentModel: Model | null;
 
 	constructor()
 	{
 		super();
 		
 		this._testProperty = 0;
+		this._models = new Map();
+		this._currentModel = null;
 		
 		const properties = this._getInitProperties();
 		if (properties)
 		{
 			this._testProperty = properties[0] as number;
 		}
+		
+		// Enable ticking to update animations
+		this._setTicking(true);
 	}
 	
 	_release()
 	{
+		// Clean up models when instance is released
+		for (const model of this._models.values())
+		{
+			if (globalThis.rendera?.instanceManager)
+			{
+				globalThis.rendera.instanceManager.removeInstance(model.instanceId);
+			}
+		}
+		this._models.clear();
+		this._currentModel = null;
+		
 		super._release();
+	}
+	
+	_tick()
+	{
+		// Update current model animation if exists
+		if (this._currentModel && globalThis.rendera?.instanceManager)
+		{
+			this._currentModel.updateAnimation(this.runtime.dt);
+		}
 	}
 	
 	_draw(renderer: IRenderer)
 	{
+		// First render rendera models if available
+		if (globalThis.rendera?.instanceManager && globalThis.rendera?.render)
+		{
+			// Pass current tick to rendera's render function
+			globalThis.rendera.render(this.runtime.tickCount);
+		}
+		
+		// Then draw the C3 sprite overlay
 		const imageInfo = this.objectType.getImageInfo();
 		const texture = imageInfo.getTexture(renderer);
 		
@@ -78,6 +113,37 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 	_getTestProperty()
 	{
 		return this._testProperty;
+	}
+
+	_createModel(modelPath: string)
+	{
+		// Check if rendera instance manager is available
+		if (!globalThis.rendera?.instanceManager)
+		{
+			console.error("Rendera instance manager not available");
+			return;
+		}
+
+		// Create model instance
+		const model = globalThis.rendera.instanceManager.createModel(modelPath);
+		if (model)
+		{
+			this._models.set(modelPath, model);
+			this._currentModel = model;
+			
+			// Set initial position based on Construct instance position
+			model.setPosition(this.x, this.y, 0);
+		}
+	}
+
+	_getModel(modelPath: string): Model | undefined
+	{
+		return this._models.get(modelPath);
+	}
+
+	_getCurrentModel(): Model | null
+	{
+		return this._currentModel;
 	}
 };
 
