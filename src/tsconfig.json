@@ -1,0 +1,37 @@
+
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		/* Transpile away class fields, as Closure Compiler doesn't support them yet */
+		"target": "ES2021", 
+
+		/* Use modern standard JavaScript (ES) Modules */
+		"module": "ES2022",
+
+		/* Disable polyfill code for CommonJS modules - Construct always uses ES Modules */
+		"esModuleInterop": false,
+
+		/* Enable stricter type checking where possible */
+		"forceConsistentCasingInFileNames": true,            /* Ensure that casing is correct in imports. */
+		"noImplicitReturns": true,                           /* Report error when not all code paths return a value. */
+		"noFallthroughCasesInSwitch": true,                 /* Report errors for fallthrough cases in switch statements. */
+		"noUncheckedIndexedAccess": false,                   /* Disable for Construct 3 compatibility */
+		"exactOptionalPropertyTypes": false,                 /* Disable for Construct 3 compatibility */
+		
+		/* Keep relaxed for Construct 3 globals but enable what we can */
+		"strict": false,                                     /* Keep disabled due to globalThis usage */
+		"noImplicitAny": false,                             /* Keep disabled due to Construct 3 APIs */
+		"strictNullChecks": true,                           /* Enable null/undefined checks */
+		"strictFunctionTypes": true,                        /* Enable strict function types */
+		"strictBindCallApply": true,                        /* Enable strict bind/call/apply */
+		"strictPropertyInitialization": false,              /* Disable due to Construct 3 patterns */
+		
+		"skipLibCheck": true,                               /* Skip type checking .d.ts files */
+		
+		/* Additional useful checks */
+		"noImplicitOverride": false,                        /* Disable override keywords for Construct 3 compatibility */
+		"noPropertyAccessFromIndexSignature": false,        /* Allow property access for Construct 3 */
+		"allowUnreachableCode": false,                      /* Report unreachable code as error */
+		"allowUnusedLabels": false                          /* Report unused labels as error */
+	}
+}

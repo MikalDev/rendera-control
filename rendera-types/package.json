@@ -1,0 +1,24 @@
+{
+  "name": "@rendera/types",
+  "version": "1.0.0",
+  "description": "TypeScript type definitions for Rendera 3D renderer",
+  "main": "index.d.ts",
+  "types": "index.d.ts",
+  "files": [
+    "*.d.ts",
+    "*.d.ts.map"
+  ],
+  "keywords": [
+    "rendera",
+    "3d",
+    "renderer",
+    "types",
+    "typescript",
+    "construct3"
+  ],
+  "author": "",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,36 @@
+﻿{
+	"$schema": "../plugin.addon.schema.json",
+	
+	"is-c3-addon": true,
+	"sdk-version": 2,
+	"min-construct-version": "r401",
+	"type": "plugin",
+	"name": "Rendera Controller",
+	"id": "renderaController",
+	"version": "1.0.0",
+	"author": "Mikal",
+	"website": "https://www.kindeyegames.com",
+	"documentation": "https://www.kindeyegames.com",
+	"description": "Construct 3 plugin for controlling Rendera 3D rendering engine.",
+	"editor-scripts": [
+						"plugin.js",
+						"type.js",
+						"instance.js"
+					],
+	"file-list": [
+		"c3runtime/main.js",
+		"c3runtime/plugin.js",
+		"c3runtime/type.js",
+		"c3runtime/instance.js",
+		"c3runtime/conditions.js",
+		"c3runtime/actions.js",
+		"c3runtime/expressions.js",
+		"lang/en-US.json",
+		"aces.json",
+		"addon.json",
+		"icon.svg",
+		"plugin.js",
+		"type.js",
+		"instance.js"
+	]
+}
