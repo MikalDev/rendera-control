@@ -87,6 +87,7 @@ export interface InstanceData {
         useNormalMap?: boolean;
         lightPosition?: [number, number, number];
     };
+    disabledNodes: Set<string>;
 }
 export interface IModelLoader {
     hasModel(modelId: ModelId): boolean;
@@ -114,6 +115,11 @@ export interface IInstanceManager {
         view: mat4;
         projection: mat4;
     }): void;
+    enableAllModelNodes(instance: Model): void;
+    disableAllModelNodes(instance: Model): void;
+    enableModelNode(nodeName: string, instance: Model): void;
+    disableModelNode(nodeName: string, instance: Model): void;
+    isModelNodeEnabled(nodeName: string, instance: Model): boolean;
 }
 export interface IModel {
     readonly instanceId: InstanceId;
@@ -125,7 +131,11 @@ export interface IModel {
     setNormalMapEnabled(enabled: boolean): void;
     setBindPose(): void;
     updateAnimation(deltaTime: number): void;
-    stopAnimation(): void;
+    enableAllNodes(): void;
+    disableAllNodes(): void;
+    enableNode(nodeName: string): void;
+    disableNode(nodeName: string): void;
+    isNodeEnabled(nodeName: string): boolean;
 }
 export declare enum TextureType {
     BaseColor = 0,
@@ -148,6 +158,7 @@ export interface ModelData {
     }[];
     materialSystem: MaterialSystem;
     nodeArray?: Node[];
+    nodeNameMap: Map<string, ExtendedNode>;
 }
 export interface JointData {
     index: number;

@@ -38,7 +38,30 @@ npm run watch        # Auto-compile on file changes
 npm run copy-types   # Sync rendera types from sibling project
 npm run clean        # Remove compiled JavaScript files
 npm run rebuild      # Clean and build
+npm run package      # Build and create .c3addon file for distribution
 ```
+
+## Packaging for Distribution
+
+To create a `.c3addon` file for distribution:
+
+```bash
+# First install dependencies
+npm install
+
+# Package the addon
+npm run package
+```
+
+This will:
+1. Build all TypeScript files to JavaScript
+2. Create a `.c3addon` file in the `dist/` directory
+3. The file will be named `{addon-id}_{version}.c3addon`
+
+To install the packaged addon:
+1. Open Construct 3
+2. Menu → View → Addon Manager
+3. Install from file → Select the `.c3addon` file
 
 ## Project Structure
 

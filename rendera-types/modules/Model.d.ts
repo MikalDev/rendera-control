@@ -12,6 +12,11 @@ export declare class Model implements IModel {
     stopAnimation(): void;
     setBindPose(): void;
     setQuaternion(x: number, y: number, z: number, w: number): void;
+    enableAllNodes(): void;
+    disableAllNodes(): void;
+    enableNode(nodeName: string): void;
+    disableNode(nodeName: string): void;
+    isNodeEnabled(nodeName: string): boolean;
     get manager(): IInstanceManager;
 }
 //# sourceMappingURL=Model.d.ts.map

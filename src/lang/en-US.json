@@ -10,19 +10,9 @@
 				"description": "Control Rendera 3D rendering engine from Construct 3.",
 				"help-url": "https://www.construct.net",
 				"properties": {
-					"edit-image": {
-						"name": "Image",
-						"desc": "Click to edit the object's image.",
-						"link-text": "Edit"
-					},
-					"make-original-size": {
-						"name": "Size",
-						"desc": "Click to set the object to the same size as its image.",
-						"link-text": "Make 1:1"
-					},
-					"test-property": {
-						"name": "Test property",
-						"desc": "A test number property. Displayed by 'Alert' action."
+					"model-name": {
+						"name": "Model name",
+						"desc": "Name of the 3D model to use when this instance is placed in the editor."
 					},
 					"debug-rendering": {
 						"name": "Debug rendering",
@@ -162,6 +152,38 @@
 									"ZXY": "ZXY",
 									"ZYX": "ZYX"
 								}
+							}
+						}
+					},
+					"enable-all-nodes": {
+						"list-name": "Enable all nodes",
+						"display-text": "Enable all rendering nodes",
+						"description": "Enable rendering for all nodes in the current model."
+					},
+					"disable-all-nodes": {
+						"list-name": "Disable all nodes",
+						"display-text": "Disable all rendering nodes",
+						"description": "Disable rendering for all nodes in the current model."
+					},
+					"enable-node": {
+						"list-name": "Enable node",
+						"display-text": "Enable node [i]{0}[/i]",
+						"description": "Enable rendering for a specific node by name.",
+						"params": {
+							"node-name": {
+								"name": "Node name",
+								"desc": "The name of the node to enable."
+							}
+						}
+					},
+					"disable-node": {
+						"list-name": "Disable node",
+						"display-text": "Disable node [i]{0}[/i]",
+						"description": "Disable rendering for a specific node by name.",
+						"params": {
+							"node-name": {
+								"name": "Node name",
+								"desc": "The name of the node to disable."
 							}
 						}
 					}

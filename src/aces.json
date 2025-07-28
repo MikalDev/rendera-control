@@ -127,6 +127,34 @@
 						]
 					}
 				]
+			},
+			{
+				"id": "enable-all-nodes",
+				"scriptName": "EnableAllNodes"
+			},
+			{
+				"id": "disable-all-nodes",
+				"scriptName": "DisableAllNodes"
+			},
+			{
+				"id": "enable-node",
+				"scriptName": "EnableNode",
+				"params": [
+					{
+						"id": "node-name",
+						"type": "string"
+					}
+				]
+			},
+			{
+				"id": "disable-node",
+				"scriptName": "DisableNode",
+				"params": [
+					{
+						"id": "node-name",
+						"type": "string"
+					}
+				]
 			}
 		],
 		"expressions": [

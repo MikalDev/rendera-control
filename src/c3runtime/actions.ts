@@ -140,5 +140,37 @@ C3.Plugins.renderaController.Acts =
 			// Note: We don't update _lastSyncedAngle here because
 			// SetRotation uses Euler angles while C3 uses a single angle
 		}
+	},
+
+	EnableAllNodes(this: SDKInstanceClass)
+	{
+		if (this._currentModel)
+		{
+			this._currentModel.enableAllNodes();
+		}
+	},
+
+	DisableAllNodes(this: SDKInstanceClass)
+	{
+		if (this._currentModel)
+		{
+			this._currentModel.disableAllNodes();
+		}
+	},
+
+	EnableNode(this: SDKInstanceClass, nodeName: string)
+	{
+		if (this._currentModel)
+		{
+			this._currentModel.enableNode(nodeName);
+		}
+	},
+
+	DisableNode(this: SDKInstanceClass, nodeName: string)
+	{
+		if (this._currentModel)
+		{
+			this._currentModel.disableNode(nodeName);
+		}
 	}
 };

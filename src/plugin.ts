@@ -46,21 +46,7 @@ const PLUGIN_CLASS = SDK.Plugins.renderaController = class MyDrawingPlugin exten
 		SDK.Lang.PushContext(".properties");
 		
 		this._info.SetProperties([
-			new SDK.PluginProperty("link", "edit-image", {
-				linkCallback: function (param) {
-					const sdkType = param as SDK.ITypeBase;
-					sdkType.GetObjectType().EditImage();
-				},
-				callbackType: "once-for-type"
-			}),
-			new SDK.PluginProperty("link", "make-original-size", {
-				linkCallback: function (param) {
-					const sdkInst = param as SDKEditorInstanceClass;
-					sdkInst.OnMakeOriginalSize();
-				},
-				callbackType: "for-each-instance"
-			}),
-			new SDK.PluginProperty("integer", "test-property", 0),
+			new SDK.PluginProperty("text", "model-name", ""),
 			new SDK.PluginProperty("check", "debug-rendering", false)
 		]);
 		

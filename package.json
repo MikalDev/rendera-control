@@ -8,11 +8,13 @@
     "build": "tsc -p src/tsconfig.json",
     "clean": "node -e \"const fs=require('fs');const path=require('path');const rmJs=(dir)=>{fs.readdirSync(dir).forEach(f=>{const fp=path.join(dir,f);if(fs.statSync(fp).isDirectory()){rmJs(fp)}else if(f.endsWith('.js')&&fs.existsSync(fp.replace('.js','.ts'))){fs.unlinkSync(fp)}})};rmJs('src')\"",
     "rebuild": "npm run clean && npm run build",
-    "copy-types": "node -e \"const fs=require('fs-extra');fs.copySync('../rendera/rendera-types','./rendera-types',{overwrite:true});console.log('Copied rendera-types successfully')\""
+    "copy-types": "node -e \"const fs=require('fs-extra');fs.copySync('../rendera/rendera-types','./rendera-types',{overwrite:true});console.log('Copied rendera-types successfully')\"",
+    "package": "npm run build && node scripts/package-addon.js"
   },
   "devDependencies": {
     "typescript": "^5.3.3",
-    "fs-extra": "^11.2.0"
+    "fs-extra": "^11.2.0",
+    "archiver": "^6.0.1"
   },
   "keywords": [
     "construct3",

@@ -119,6 +119,32 @@ These schemas provide validation and structure for:
 - Configuring plugin metadata and properties in `addon.json`
 - Adding localized strings for the plugin interface
 
+## Design Patterns and Principles
+
+Follow these principles when working on this codebase:
+
+### DRY (Don't Repeat Yourself)
+- Extract common logic into reusable functions or methods
+- Use type definitions and interfaces to avoid duplicating type information
+- Example: Node visibility is handled by the Model class, not duplicated in C3 plugin
+
+### YAGNI (You Aren't Gonna Need It)
+- Only implement features that are currently needed
+- Don't add speculative functionality or over-engineer solutions
+- Example: Node filtering implementation focuses on current needs, not hypothetical future features
+
+### SOLID Principles
+- **Single Responsibility**: Each class/module has one clear purpose (e.g., Model handles model state, InstanceManager handles rendering)
+- **Open/Closed**: Extend behavior through composition, not modification (e.g., adding node visibility to Model without changing core functionality)
+- **Liskov Substitution**: Type implementations match their interfaces exactly
+- **Interface Segregation**: Use focused interfaces (IModel, IInstanceManager) rather than large monolithic ones
+- **Dependency Inversion**: Depend on abstractions (interfaces) not concrete implementations
+
+### KISS (Keep It Simple, Stupid)
+- Prefer simple, readable solutions over clever optimizations
+- Use clear variable names and straightforward logic
+- Example: Direct method calls like `model.disableNode(name)` instead of complex state management
+
 ## Important Notes
 
 - Both `.ts` and `.js` files must be maintained as Construct 3 loads the JavaScript files

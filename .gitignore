@@ -42,6 +42,7 @@ $RECYCLE.BIN/
 dist/
 build/
 .cache/
+*.c3addon
 
 # Environment files
 .env
