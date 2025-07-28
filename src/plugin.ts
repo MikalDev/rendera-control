@@ -60,7 +60,8 @@ const PLUGIN_CLASS = SDK.Plugins.renderaController = class MyDrawingPlugin exten
 				},
 				callbackType: "for-each-instance"
 			}),
-			new SDK.PluginProperty("integer", "test-property", 0)
+			new SDK.PluginProperty("integer", "test-property", 0),
+			new SDK.PluginProperty("check", "debug-rendering", false)
 		]);
 		
 		SDK.Lang.PopContext();		// .properties

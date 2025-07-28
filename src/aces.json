@@ -49,6 +49,84 @@
 			{
 				"id": "stop-animation",
 				"scriptName": "StopAnimation"
+			},
+			{
+				"id": "set-debug-rendering",
+				"scriptName": "SetDebugRendering",
+				"params": [
+					{
+						"id": "enabled",
+						"type": "boolean"
+					}
+				]
+			},
+			{
+				"id": "set-scale",
+				"scriptName": "SetScale",
+				"params": [
+					{
+						"id": "scale",
+						"type": "number"
+					}
+				]
+			},
+			{
+				"id": "set-sprite-visible",
+				"scriptName": "SetSpriteVisible",
+				"params": [
+					{
+						"id": "visible",
+						"type": "boolean"
+					}
+				]
+			},
+			{
+				"id": "set-position",
+				"scriptName": "SetPosition",
+				"params": [
+					{
+						"id": "x",
+						"type": "number"
+					},
+					{
+						"id": "y",
+						"type": "number"
+					},
+					{
+						"id": "z",
+						"type": "number"
+					}
+				]
+			},
+			{
+				"id": "set-rotation",
+				"scriptName": "SetRotation",
+				"params": [
+					{
+						"id": "x",
+						"type": "number"
+					},
+					{
+						"id": "y",
+						"type": "number"
+					},
+					{
+						"id": "z",
+						"type": "number"
+					},
+					{
+						"id": "order",
+						"type": "combo",
+						"items": [
+							"XYZ",
+							"XZY",
+							"YXZ",
+							"YZX",
+							"ZXY",
+							"ZYX"
+						]
+					}
+				]
 			}
 		],
 		"expressions": [

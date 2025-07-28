@@ -23,6 +23,10 @@
 					"test-property": {
 						"name": "Test property",
 						"desc": "A test number property. Displayed by 'Alert' action."
+					},
+					"debug-rendering": {
+						"name": "Debug rendering",
+						"desc": "Enable debug rendering overlay to show model and system information."
 					}
 				},
 				"aceCategories": {
@@ -77,6 +81,89 @@
 						"list-name": "Stop animation",
 						"display-text": "Stop animation",
 						"description": "Stop the current animation."
+					},
+					"set-debug-rendering": {
+						"list-name": "Set debug rendering",
+						"display-text": "Set debug rendering to [i]{0}[/i]",
+						"description": "Enable or disable debug rendering overlay.",
+						"params": {
+							"enabled": {
+								"name": "Enabled",
+								"desc": "Whether to enable debug rendering."
+							}
+						}
+					},
+					"set-scale": {
+						"list-name": "Set scale",
+						"display-text": "Set scale to [i]{0}[/i]",
+						"description": "Set the uniform scale of the current model.",
+						"params": {
+							"scale": {
+								"name": "Scale",
+								"desc": "The scale factor to apply to all axes."
+							}
+						}
+					},
+					"set-sprite-visible": {
+						"list-name": "Set sprite visible",
+						"display-text": "Set sprite visible to [i]{0}[/i]",
+						"description": "Show or hide the 2D sprite overlay.",
+						"params": {
+							"visible": {
+								"name": "Visible",
+								"desc": "Whether to show the 2D sprite."
+							}
+						}
+					},
+					"set-position": {
+						"list-name": "Set position",
+						"display-text": "Set position to ([i]{0}[/i], [i]{1}[/i], [i]{2}[/i])",
+						"description": "Set the 3D position of the current model.",
+						"params": {
+							"x": {
+								"name": "X",
+								"desc": "The X coordinate."
+							},
+							"y": {
+								"name": "Y",
+								"desc": "The Y coordinate."
+							},
+							"z": {
+								"name": "Z",
+								"desc": "The Z coordinate."
+							}
+						}
+					},
+					"set-rotation": {
+						"list-name": "Set rotation",
+						"display-text": "Set rotation to ([i]{0}[/i]°, [i]{1}[/i]°, [i]{2}[/i]°) order [i]{3}[/i]",
+						"description": "Set the rotation of the current model using Euler angles in degrees with specified rotation order.",
+						"params": {
+							"x": {
+								"name": "X rotation",
+								"desc": "The rotation around the X axis in degrees."
+							},
+							"y": {
+								"name": "Y rotation",
+								"desc": "The rotation around the Y axis in degrees."
+							},
+							"z": {
+								"name": "Z rotation",
+								"desc": "The rotation around the Z axis in degrees."
+							},
+							"order": {
+								"name": "Rotation order",
+								"desc": "The order in which rotations are applied (e.g., XYZ means rotate X first, then Y, then Z).",
+								"items": {
+									"XYZ": "XYZ",
+									"XZY": "XZY",
+									"YXZ": "YXZ",
+									"YZX": "YZX",
+									"ZXY": "ZXY",
+									"ZYX": "ZYX"
+								}
+							}
+						}
 					}
 				},
 				"expressions": {
