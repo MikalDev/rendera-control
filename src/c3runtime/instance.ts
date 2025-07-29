@@ -11,6 +11,7 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 	_testProperty: number;
 	_models: Map<string, Model>;
 	_currentModel: Model | null;
+	_modelName: string;
 	_debugRendering: boolean;
 	_spriteVisible: boolean;
 	
@@ -31,6 +32,7 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		this._testProperty = 0;
 		this._models = new Map();
 		this._currentModel = null;
+		this._modelName = "";
 		this._debugRendering = false;
 		this._spriteVisible = false;
 		
@@ -47,8 +49,14 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		const properties = this._getInitProperties();
 		if (properties)
 		{
-			this._testProperty = properties[0] as number;
+			this._modelName = properties[0] as string || "";
 			this._debugRendering = properties[1] as boolean;
+			
+			// Create initial model if name is provided
+			if (this._modelName)
+			{
+				this._createModel(this._modelName);
+			}
 		}
 		
 		// Enable ticking to update animations

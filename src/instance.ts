@@ -10,9 +10,12 @@ const PLUGIN_CLASS = SDK.Plugins.renderaController;
 
 class MyDrawingInstance extends SDK.IWorldInstanceBase
 {
+	_modelName: string;
+	
 	constructor(sdkType: SDK.ITypeBase, inst: SDK.IWorldInstance)
 	{
 		super(sdkType, inst);
+		this._modelName = "";
 	}
 	
 	Release()
@@ -21,6 +24,8 @@ class MyDrawingInstance extends SDK.IWorldInstanceBase
 	
 	OnCreate()
 	{
+		// Initialize model name from property
+		this._modelName = this._inst.GetPropertyValue("model-name") as string || "";
 	}
 	
 	OnPlacedInLayout()
@@ -52,6 +57,54 @@ class MyDrawingInstance extends SDK.IWorldInstanceBase
 				iRenderer.SetColorRgba(0, 0, 0.1, 0.1);
 			
 			iRenderer.Quad(this._inst.GetQuad());
+		}
+		
+		// Draw model name overlay if present
+		if (this._modelName)
+		{
+			const textRenderer = iRenderer.CreateRendererText();
+			
+			// Configure text
+			textRenderer.SetFontName("Arial");
+			textRenderer.SetFontSize(12);
+			textRenderer.SetText(this._modelName);
+			textRenderer.SetHorizontalAlignment("center");
+			textRenderer.SetVerticalAlignment("center");
+			
+			// Calculate text size for this zoom level
+			const zoomScale = 1; // Use fixed scale for now
+			textRenderer.SetSize(200, 20, zoomScale);
+			
+			// Get instance bounds
+			const quad = this._inst.GetQuad();
+			const bottomY = Math.max(quad.getTly(), quad.getTry(), quad.getBly(), quad.getBry());
+			const centerX = (quad.getTlx() + quad.getTrx() + quad.getBlx() + quad.getBrx()) / 4;
+			
+			// Position text below the sprite
+			const textHeight = 20;
+			const padding = 4;
+			const textY = bottomY + padding;
+			
+			// Draw semi-transparent background
+			iRenderer.SetAlphaBlend();
+			iRenderer.SetColorFillMode();
+			iRenderer.SetColorRgba(0, 0, 0, 0.7);
+			
+			const bgQuad = new SDK.Quad();
+			bgQuad.setRect(centerX - 100, textY, centerX + 100, textY + textHeight);
+			iRenderer.Quad(bgQuad);
+			
+			// Draw text
+			const textTexture = textRenderer.GetTexture();
+			if (textTexture)
+			{
+				iRenderer.SetTexture(textTexture);
+				iRenderer.SetColorRgba(1, 1, 1, 1); // white text
+				iRenderer.Quad3(bgQuad, textRenderer.GetTexRect());
+			}
+			
+			// Clean up
+			textRenderer.Release();
 		}
 	}
 	
@@ -94,6 +147,10 @@ class MyDrawingInstance extends SDK.IWorldInstanceBase
 	
 	OnPropertyChanged(id: string, value: EditorPropertyValueType)
 	{
+		if (id === "model-name")
+		{
+			this._modelName = value as string || "";
+		}
 	}
 	
 	LoadC2Property(name: string, valueString: string)
