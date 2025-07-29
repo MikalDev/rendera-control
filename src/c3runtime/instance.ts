@@ -138,7 +138,6 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		if (rendera)
 		{
 			rendera.draw();
-			debugger
 		}
 		
 		// Debug rendering overlay

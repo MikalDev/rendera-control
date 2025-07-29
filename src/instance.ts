@@ -68,6 +68,7 @@ class MyDrawingInstance extends SDK.IWorldInstanceBase
 			textRenderer.SetFontName("Arial");
 			textRenderer.SetFontSize(12);
 			textRenderer.SetText(this._modelName);
+			textRenderer.SetColorRgb(1, 1, 1); // White text color
 			textRenderer.SetHorizontalAlignment("center");
 			textRenderer.SetVerticalAlignment("center");
 			
@@ -85,26 +86,25 @@ class MyDrawingInstance extends SDK.IWorldInstanceBase
 			const padding = 4;
 			const textY = bottomY + padding;
 			
-			// Draw semi-transparent background
-			iRenderer.SetAlphaBlend();
-			iRenderer.SetColorFillMode();
-			iRenderer.SetColorRgba(0, 0, 0, 0.7);
+			// Create text quad
+			const textQuad = new SDK.Quad();
+			textQuad.setRect(centerX - 100, textY, centerX + 100, textY + textHeight);
 			
-			const bgQuad = new SDK.Quad();
-			bgQuad.setRect(centerX - 100, textY, centerX + 100, textY + textHeight);
-			iRenderer.Quad(bgQuad);
-			
-			// Draw text
+			// Draw text with 25% opacity (75% transparent)
 			const textTexture = textRenderer.GetTexture();
 			if (textTexture)
 			{
+				iRenderer.SetAlphaBlend();
 				iRenderer.SetTexture(textTexture);
-				iRenderer.SetColorRgba(1, 1, 1, 1); // white text
-				iRenderer.Quad3(bgQuad, textRenderer.GetTexRect());
+				iRenderer.SetColorRgba(1, 1, 1, 0.25); // White text with 25% opacity
+				iRenderer.Quad3(textQuad, textRenderer.GetTexRect());
 			}
 			
 			// Clean up
 			textRenderer.Release();
+			
+			// Reset renderer state
+			iRenderer.ResetColor();
 		}
 	}
 	
