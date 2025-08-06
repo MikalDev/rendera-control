@@ -25,6 +25,12 @@ C3.Plugins.renderaController.Acts =
 		{
 			this._currentModel.playAnimation(animationName, { loop: loop });
 		}
+		else
+		{
+			this._commandQueue.push(() => {
+				this._currentModel?.playAnimation(animationName, { loop: loop });
+			});
+		}
 	},
 
 	StopAnimation(this: SDKInstanceClass)
@@ -32,6 +38,12 @@ C3.Plugins.renderaController.Acts =
 		if (this._currentModel)
 		{
 			this._currentModel.stopAnimation();
+		}
+		else
+		{
+			this._commandQueue.push(() => {
+				this._currentModel?.stopAnimation();
+			});
 		}
 	},
 
@@ -46,6 +58,12 @@ C3.Plugins.renderaController.Acts =
 		{
 			this._currentModel.setScale(scale, scale, scale);
 		}
+		else
+		{
+			this._commandQueue.push(() => {
+				this._currentModel?.setScale(scale, scale, scale);
+			});
+		}
 	},
 
 	SetSpriteVisible(this: SDKInstanceClass, visible: boolean)
@@ -55,8 +73,9 @@ C3.Plugins.renderaController.Acts =
 
 	SetPosition(this: SDKInstanceClass, x: number, y: number, z: number)
 	{
-		if (this._currentModel)
-		{
+		const executeSetPosition = () => {
+			if (!this._currentModel) return;
+			
 			this._currentModel.setPosition(x, y, z);
 			
 			// Mark position as manually overridden for this tick
@@ -66,13 +85,23 @@ C3.Plugins.renderaController.Acts =
 			this._lastSyncedX = x;
 			this._lastSyncedY = y;
 			this._lastSyncedZ = z;
+		};
+		
+		if (this._currentModel)
+		{
+			executeSetPosition();
+		}
+		else
+		{
+			this._commandQueue.push(executeSetPosition);
 		}
 	},
 
 	SetRotation(this: SDKInstanceClass, x: number, y: number, z: number, order: number)
 	{
-		if (this._currentModel)
-		{
+		const executeRotation = () => {
+			if (!this._currentModel) return;
+			
 			// Convert Euler angles (in degrees) to quaternion
 			const degToRad = Math.PI / 180;
 			const rx = x * degToRad;
@@ -136,9 +165,15 @@ C3.Plugins.renderaController.Acts =
 			
 			// Mark rotation as manually overridden for this tick
 			this._rotationOverridden = true;
-			
-			// Note: We don't update _lastSyncedAngle here because
-			// SetRotation uses Euler angles while C3 uses a single angle
+		};
+		
+		if (this._currentModel)
+		{
+			executeRotation();
+		}
+		else
+		{
+			this._commandQueue.push(executeRotation);
 		}
 	},
 
@@ -148,6 +183,12 @@ C3.Plugins.renderaController.Acts =
 		{
 			this._currentModel.enableAllNodes();
 		}
+		else
+		{
+			this._commandQueue.push(() => {
+				this._currentModel?.enableAllNodes();
+			});
+		}
 	},
 
 	DisableAllNodes(this: SDKInstanceClass)
@@ -155,6 +196,12 @@ C3.Plugins.renderaController.Acts =
 		if (this._currentModel)
 		{
 			this._currentModel.disableAllNodes();
+		}
+		else
+		{
+			this._commandQueue.push(() => {
+				this._currentModel?.disableAllNodes();
+			});
 		}
 	},
 
@@ -164,6 +211,12 @@ C3.Plugins.renderaController.Acts =
 		{
 			this._currentModel.enableNode(nodeName);
 		}
+		else
+		{
+			this._commandQueue.push(() => {
+				this._currentModel?.enableNode(nodeName);
+			});
+		}
 	},
 
 	DisableNode(this: SDKInstanceClass, nodeName: string)
@@ -171,6 +224,12 @@ C3.Plugins.renderaController.Acts =
 		if (this._currentModel)
 		{
 			this._currentModel.disableNode(nodeName);
+		}
+		else
+		{
+			this._commandQueue.push(() => {
+				this._currentModel?.disableNode(nodeName);
+			});
 		}
 	}
 };

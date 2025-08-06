@@ -9,11 +9,12 @@ const C3 = globalThis.C3;
 class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 {
 	_testProperty: number;
-	_models: Map<string, Model>;
 	_currentModel: Model | null;
+	_pendingModelPath: string | null;
 	_modelName: string;
 	_debugRendering: boolean;
 	_spriteVisible: boolean;
+	_commandQueue: Array<() => void>;
 	
 	// Position tracking for sync
 	_positionOverridden: boolean;
@@ -30,11 +31,12 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		super();
 		
 		this._testProperty = 0;
-		this._models = new Map();
 		this._currentModel = null;
+		this._pendingModelPath = null;
 		this._modelName = "";
 		this._debugRendering = false;
 		this._spriteVisible = false;
+		this._commandQueue = [];
 		
 		// Initialize position tracking
 		this._positionOverridden = false;
@@ -65,22 +67,29 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 	
 	_release()
 	{
-		// Clean up models when instance is released
-		for (const model of this._models.values())
+		// Clean up model when instance is released
+		if (this._currentModel && globalThis.rendera?.instanceManager)
 		{
-			if (globalThis.rendera?.instanceManager)
-			{
-				globalThis.rendera.instanceManager.removeInstance(model.instanceId);
-			}
+			globalThis.rendera.instanceManager.removeInstance(this._currentModel.instanceId);
 		}
-		this._models.clear();
 		this._currentModel = null;
+		this._pendingModelPath = null;
 		
 		super._release();
 	}
 	
 	_tick()
 	{
+		// Check for pending model creation - try once per tick
+		if (this._pendingModelPath && !this._currentModel)
+		{
+			if (globalThis.rendera?.instanceManager)
+			{
+				// Try to create the model - it will keep retrying each tick until successful
+				this._tryCreatePendingModel();
+			}
+		}
+		
 		if (this._currentModel && globalThis.rendera?.instanceManager)
 		{
 			// Sync position with C3 if not manually overridden
@@ -200,30 +209,67 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		return this._testProperty;
 	}
 
-	_createModel(modelPath: string)
+	_executeQueuedCommands()
 	{
-		// Check if rendera instance manager is available
-		if (!globalThis.rendera?.instanceManager)
+		// Execute all queued commands
+		for (const command of this._commandQueue)
 		{
-			console.error("Rendera instance manager not available");
-			return;
+			command();
 		}
+		// Clear the queue
+		this._commandQueue = [];
+	}
 
-		// Create model instance
-		const model = globalThis.rendera.instanceManager.createModel(modelPath);
-		if (model)
-		{
-			this._models.set(modelPath, model);
-			this._currentModel = model;
-			
-			// Set initial position based on Construct instance position
-			model.setPosition(this.x, this.y, this.zElevation);
+	_tryCreatePendingModel()
+	{
+		if (!this._pendingModelPath || !globalThis.rendera?.instanceManager) return;
+		
+		try {
+			const model = globalThis.rendera.instanceManager.createModel(this._pendingModelPath);
+			if (model)
+			{
+				this._currentModel = model;
+				const modelPath = this._pendingModelPath;
+				this._pendingModelPath = null; // Clear pending since we successfully created it
+				
+				// Set initial position based on Construct instance position
+				model.setPosition(this.x, this.y, this.zElevation);
+				
+				// Execute any queued commands
+				this._executeQueuedCommands();
+				
+				console.log("Model created successfully:", modelPath);
+			}
+			// If model is null, it's still loading - we'll retry next tick
+		} catch (error) {
+			// Model threw an error - it's still loading, we'll retry next tick
+			// This is expected behavior while the model loads
 		}
 	}
 
-	_getModel(modelPath: string): Model | undefined
+	_createModel(modelPath: string)
 	{
-		return this._models.get(modelPath);
+		// Clear any existing model first
+		if (this._currentModel && globalThis.rendera?.instanceManager)
+		{
+			globalThis.rendera.instanceManager.removeInstance(this._currentModel.instanceId);
+			this._currentModel = null;
+			// Clear command queue when destroying old model
+			this._commandQueue = [];
+		}
+
+		// Store the model path as pending - it will be created in _tick when ready
+		this._pendingModelPath = modelPath;
+		
+		// If rendera is already available, try to create immediately
+		if (globalThis.rendera?.instanceManager)
+		{
+			this._tryCreatePendingModel();
+		}
+		else
+		{
+			console.log("Rendera not ready, deferring model creation:", modelPath);
+		}
 	}
 
 	_getCurrentModel(): Model | null
