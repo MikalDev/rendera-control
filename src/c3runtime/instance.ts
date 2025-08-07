@@ -239,6 +239,9 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 				this._executeQueuedCommands();
 				
 				console.log("Model created successfully:", modelPath);
+				
+				// Fire the OnModelCreated trigger
+				this._trigger(C3.Plugins.renderaController.Cnds.OnModelCreated);
 			}
 			// If model is null, it's still loading - we'll retry next tick
 		} catch (error) {

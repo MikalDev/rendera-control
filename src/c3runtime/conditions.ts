@@ -11,5 +11,11 @@ C3.Plugins.renderaController.Cnds =
 	IsLargeNumber(this: SDKInstanceClass, num: number)
 	{
 		return num > 100;
+	},
+	
+	OnModelCreated(this: SDKInstanceClass)
+	{
+		// Trigger condition - returns true when triggered
+		return true;
 	}
 };

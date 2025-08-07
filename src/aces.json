@@ -13,6 +13,11 @@
 						"type": "number"
 					}
 				]
+			},
+			{
+				"id": "on-model-created",
+				"scriptName": "OnModelCreated",
+				"isTrigger": true
 			}
 		],
 		"actions": [

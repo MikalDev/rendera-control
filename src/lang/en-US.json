@@ -33,6 +33,11 @@
 								"desc": "Number to test if greater than 100."
 							}
 						}
+					},
+					"on-model-created": {
+						"list-name": "On model created",
+						"display-text": "On model created",
+						"description": "Triggered when a 3D model has been successfully created and is ready to use."
 					}
 				},
 				"actions": {

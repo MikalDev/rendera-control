@@ -38,6 +38,7 @@ const PLUGIN_CLASS = SDK.Plugins.renderaController = class MyDrawingPlugin exten
 		this._info.SetPluginType("world");			// mark as world plugin, which can draw
 		this._info.SetIsResizable(true);			// allow to be resized
 		this._info.SetIsRotatable(true);			// allow to be rotated
+		this._info.SetSupportsZElevation(true);	// support z-elevation for 3D positioning
 		this._info.SetHasImage(true);
 		this._info.SetSupportsEffects(true);		// allow effects
 		this._info.SetMustPreDraw(true);
