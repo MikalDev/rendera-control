@@ -1,8 +1,8 @@
 
 /// <reference path="../../ts-defs/runtime/AddonSDK.d.ts" />
-/// <reference path="../../rendera-types/modules/index.d.ts" />
+/// <reference path="../../rendera-types/index.d.ts" />
 
-import type { InstanceManager, Model, InstanceId, AnimationOptions } from '../../rendera-types/modules/index';
+import type { InstanceManager, Model, InstanceId, AnimationOptions } from '../../rendera-types/index';
 
 const C3 = globalThis.C3;
 
@@ -146,7 +146,7 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		const rendera = globalThis.rendera;
 		if (rendera)
 		{
-			rendera.draw();
+			rendera.draw(renderer);
 		}
 		
 		// Debug rendering overlay

@@ -1,9 +1,9 @@
 
 /// <reference path="../../ts-defs/runtime/AddonSDK.d.ts" />
-/// <reference path="../../rendera-types/modules/index.d.ts" />
+/// <reference path="../../rendera-types/index.d.ts" />
 
 import type { SDKInstanceClass } from "./instance.ts";
-import type { Model, AnimationOptions } from '../../rendera-types/modules/index';
+import type { Model, AnimationOptions } from '../../rendera-types/index';
 
 const C3 = globalThis.C3;
 
@@ -43,6 +43,22 @@ C3.Plugins.renderaController.Acts =
 		{
 			this._commandQueue.push(() => {
 				this._currentModel?.stopAnimation();
+			});
+		}
+	},
+
+	SetAnimationSpeed(this: SDKInstanceClass, speed: number)
+	{
+		if (this._currentModel)
+		{
+			this._currentModel.animationSpeed = speed;
+		}
+		else
+		{
+			this._commandQueue.push(() => {
+				if (this._currentModel) {
+					this._currentModel.animationSpeed = speed;
+				}
 			});
 		}
 	},

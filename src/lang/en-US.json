@@ -77,6 +77,17 @@
 						"display-text": "Stop animation",
 						"description": "Stop the current animation."
 					},
+					"set-animation-speed": {
+						"list-name": "Set animation speed",
+						"display-text": "Set animation speed to [i]{0}[/i]",
+						"description": "Set the playback speed of the current animation (0.1 to 10).",
+						"params": {
+							"speed": {
+								"name": "Speed",
+								"desc": "The animation playback speed multiplier (0.1 = 10% speed, 1 = normal, 2 = double speed, max 10)."
+							}
+						}
+					},
 					"set-debug-rendering": {
 						"list-name": "Set debug rendering",
 						"display-text": "Set debug rendering to [i]{0}[/i]",
@@ -203,6 +214,10 @@
 								"desc": "The number to double."
 							}
 						}
+					},
+					"animation-speed": {
+						"description": "Get the current animation speed multiplier.",
+						"translated-name": "AnimationSpeed"
 					}
 				}
 			}

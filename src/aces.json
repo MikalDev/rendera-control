@@ -56,6 +56,16 @@
 				"scriptName": "StopAnimation"
 			},
 			{
+				"id": "set-animation-speed",
+				"scriptName": "SetAnimationSpeed",
+				"params": [
+					{
+						"id": "speed",
+						"type": "number"
+					}
+				]
+			},
+			{
 				"id": "set-debug-rendering",
 				"scriptName": "SetDebugRendering",
 				"params": [
@@ -174,6 +184,11 @@
 						"type": "number"
 					}
 				]
+			},
+			{
+				"id": "animation-speed",
+				"expressionName": "AnimationSpeed",
+				"returnType": "number"
 			}
 		]
 	}
