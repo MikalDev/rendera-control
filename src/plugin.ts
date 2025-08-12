@@ -44,6 +44,9 @@ const PLUGIN_CLASS = SDK.Plugins.renderaController = class MyDrawingPlugin exten
 		this._info.SetMustPreDraw(true);
 		this._info.SetRuntimeModuleMainScript("c3runtime/main.js");
 		
+		// Add common scene graph ACEs (actions, conditions, expressions)
+		this._info.AddCommonSceneGraphACEs();
+		
 		SDK.Lang.PushContext(".properties");
 		
 		this._info.SetProperties([

@@ -1,4 +1,4 @@
-﻿{
+{
 	"$schema": "../plugin.addon.schema.json",
 	
 	"is-c3-addon": true,
@@ -7,7 +7,7 @@
 	"type": "plugin",
 	"name": "Rendera Controller",
 	"id": "renderaController",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"author": "Mikal",
 	"website": "https://www.kindeyegames.com",
 	"documentation": "https://www.kindeyegames.com",

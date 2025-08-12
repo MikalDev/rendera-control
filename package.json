@@ -9,7 +9,8 @@
     "clean": "node -e \"const fs=require('fs');const path=require('path');const rmJs=(dir)=>{fs.readdirSync(dir).forEach(f=>{const fp=path.join(dir,f);if(fs.statSync(fp).isDirectory()){rmJs(fp)}else if(f.endsWith('.js')&&fs.existsSync(fp.replace('.js','.ts'))){fs.unlinkSync(fp)}})};rmJs('src')\"",
     "rebuild": "npm run clean && npm run build",
     "copy-types": "node -e \"const fs=require('fs-extra');fs.copySync('../rendera/rendera-types','./rendera-types',{overwrite:true});console.log('Copied rendera-types successfully')\"",
-    "package": "npm run build && node scripts/package-addon.js"
+    "package": "npm run build && node scripts/build-addon.js",
+    "package:addon": "node scripts/build-addon.js"
   },
   "devDependencies": {
     "typescript": "^5.3.3",

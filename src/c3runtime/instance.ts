@@ -48,6 +48,11 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		this._rotationOverridden = false;
 		this._lastSyncedAngle = this.angle;
 		
+		// Listen for hierarchy ready event
+		this.addEventListener("hierarchyready", () => {
+			this._onHierarchyReady();
+		});
+		
 		const properties = this._getInitProperties();
 		if (properties)
 		{
@@ -78,6 +83,18 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		super._release();
 	}
 	
+	_onHierarchyReady()
+	{
+		// Handle hierarchy initialization
+		const parent = this.getParent();
+		if (parent && this._currentModel)
+		{
+			// Sync with parent transforms if needed
+			// Use totalZElevation which includes parent z-elevations
+			this._currentModel.setPosition(this.x, this.y, this.totalZElevation);
+		}
+	}
+	
 	_tick()
 	{
 		// Check for pending model creation - try once per tick
@@ -95,15 +112,18 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 			// Sync position with C3 if not manually overridden
 			if (!this._positionOverridden)
 			{
+				// Use totalZElevation if part of hierarchy, otherwise use zElevation
+				const zToUse = this.getParent() ? this.totalZElevation : this.zElevation;
+				
 				// Only update if position has changed
 				if (this.x !== this._lastSyncedX || 
 					this.y !== this._lastSyncedY || 
-					this.zElevation !== this._lastSyncedZ)
+					zToUse !== this._lastSyncedZ)
 				{
-					this._currentModel.setPosition(this.x, this.y, this.zElevation);
+					this._currentModel.setPosition(this.x, this.y, zToUse);
 					this._lastSyncedX = this.x;
 					this._lastSyncedY = this.y;
-					this._lastSyncedZ = this.zElevation;
+					this._lastSyncedZ = zToUse;
 				}
 			}
 			
