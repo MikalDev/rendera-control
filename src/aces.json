@@ -86,6 +86,24 @@
 				]
 			},
 			{
+				"id": "set-scale-xyz",
+				"scriptName": "SetScaleXYZ",
+				"params": [
+					{
+						"id": "scale-x",
+						"type": "number"
+					},
+					{
+						"id": "scale-y",
+						"type": "number"
+					},
+					{
+						"id": "scale-z",
+						"type": "number"
+					}
+				]
+			},
+			{
 				"id": "set-sprite-visible",
 				"scriptName": "SetSpriteVisible",
 				"params": [
@@ -188,6 +206,21 @@
 			{
 				"id": "animation-speed",
 				"expressionName": "AnimationSpeed",
+				"returnType": "number"
+			},
+			{
+				"id": "scale-x",
+				"expressionName": "ScaleX",
+				"returnType": "number"
+			},
+			{
+				"id": "scale-y",
+				"expressionName": "ScaleY",
+				"returnType": "number"
+			},
+			{
+				"id": "scale-z",
+				"expressionName": "ScaleZ",
 				"returnType": "number"
 			}
 		]

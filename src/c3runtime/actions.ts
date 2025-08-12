@@ -70,6 +70,11 @@ C3.Plugins.renderaController.Acts =
 
 	SetScale(this: SDKInstanceClass, scale: number)
 	{
+		this._scaleOverridden = true;
+		this._lastScaleX = scale;
+		this._lastScaleY = scale;
+		this._lastScaleZ = scale;
+		
 		if (this._currentModel)
 		{
 			this._currentModel.setScale(scale, scale, scale);
@@ -78,6 +83,25 @@ C3.Plugins.renderaController.Acts =
 		{
 			this._commandQueue.push(() => {
 				this._currentModel?.setScale(scale, scale, scale);
+			});
+		}
+	},
+	
+	SetScaleXYZ(this: SDKInstanceClass, scaleX: number, scaleY: number, scaleZ: number)
+	{
+		this._scaleOverridden = true;
+		this._lastScaleX = scaleX;
+		this._lastScaleY = scaleY;
+		this._lastScaleZ = scaleZ;
+		
+		if (this._currentModel)
+		{
+			this._currentModel.setScale(scaleX, scaleY, scaleZ);
+		}
+		else
+		{
+			this._commandQueue.push(() => {
+				this._currentModel?.setScale(scaleX, scaleY, scaleZ);
 			});
 		}
 	},

@@ -110,6 +110,25 @@
 							}
 						}
 					},
+					"set-scale-xyz": {
+						"list-name": "Set scale XYZ",
+						"display-text": "Set scale to X:[i]{0}[/i] Y:[i]{1}[/i] Z:[i]{2}[/i]",
+						"description": "Set the scale of the current model independently for each axis.",
+						"params": {
+							"scale-x": {
+								"name": "Scale X",
+								"desc": "The scale factor for the X axis."
+							},
+							"scale-y": {
+								"name": "Scale Y",
+								"desc": "The scale factor for the Y axis."
+							},
+							"scale-z": {
+								"name": "Scale Z",
+								"desc": "The scale factor for the Z axis."
+							}
+						}
+					},
 					"set-sprite-visible": {
 						"list-name": "Set sprite visible",
 						"display-text": "Set sprite visible to [i]{0}[/i]",
@@ -218,6 +237,18 @@
 					"animation-speed": {
 						"description": "Get the current animation speed multiplier.",
 						"translated-name": "AnimationSpeed"
+					},
+					"scale-x": {
+						"description": "Get the current X axis scale factor.",
+						"translated-name": "ScaleX"
+					},
+					"scale-y": {
+						"description": "Get the current Y axis scale factor.",
+						"translated-name": "ScaleY"
+					},
+					"scale-z": {
+						"description": "Get the current Z axis scale factor.",
+						"translated-name": "ScaleZ"
 					}
 				}
 			}

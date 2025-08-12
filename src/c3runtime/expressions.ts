@@ -20,6 +20,21 @@ C3.Plugins.renderaController.Exps =
 			return this._currentModel.animationSpeed;
 		}
 		return 1; // Default animation speed
+	},
+	
+	ScaleX(this: SDKInstanceClass)
+	{
+		return this._lastScaleX;
+	},
+	
+	ScaleY(this: SDKInstanceClass)
+	{
+		return this._lastScaleY;
+	},
+	
+	ScaleZ(this: SDKInstanceClass)
+	{
+		return this._lastScaleZ;
 	}
 };
 

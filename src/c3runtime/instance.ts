@@ -25,6 +25,12 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 	// Rotation tracking for sync
 	_rotationOverridden: boolean;
 	_lastSyncedAngle: number;
+	
+	// Scale tracking
+	_scaleOverridden: boolean;
+	_lastScaleX: number;
+	_lastScaleY: number;
+	_lastScaleZ: number;
 
 	constructor()
 	{
@@ -47,6 +53,12 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		// Initialize rotation tracking
 		this._rotationOverridden = false;
 		this._lastSyncedAngle = this.angle;
+		
+		// Initialize scale tracking
+		this._scaleOverridden = false;
+		this._lastScaleX = 1;
+		this._lastScaleY = 1;
+		this._lastScaleZ = 1;
 		
 		// Listen for hierarchy ready event
 		this.addEventListener("hierarchyready", () => {
