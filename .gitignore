@@ -44,6 +44,9 @@ build/
 .cache/
 *.c3addon
 
+# Butler tool
+tools/butler/
+
 # Environment files
 .env
 .env.local
