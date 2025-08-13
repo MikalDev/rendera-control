@@ -48,6 +48,10 @@
 					{
 						"id": "loop",
 						"type": "boolean"
+					},
+					{
+						"id": "blend-duration",
+						"type": "number"
 					}
 				]
 			},

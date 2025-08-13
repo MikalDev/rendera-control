@@ -19,16 +19,27 @@ C3.Plugins.renderaController.Acts =
 		this._createModel(modelPath);
 	},
 
-	PlayAnimation(this: SDKInstanceClass, animationName: string, loop: boolean)
+	PlayAnimation(this: SDKInstanceClass, animationName: string, loop: boolean, blendDuration: number)
 	{
+		const animationOptions: AnimationOptions = { 
+			loop: loop,
+			speed: 1.0
+		};
+		
+		// Only add blendDuration if it's greater than 0
+		if (blendDuration > 0)
+		{
+			animationOptions.blendDuration = blendDuration;
+		}
+		
 		if (this._currentModel)
 		{
-			this._currentModel.playAnimation(animationName, { loop: loop });
+			this._currentModel.playAnimation(animationName, animationOptions);
 		}
 		else
 		{
 			this._commandQueue.push(() => {
-				this._currentModel?.playAnimation(animationName, { loop: loop });
+				this._currentModel?.playAnimation(animationName, animationOptions);
 			});
 		}
 	},

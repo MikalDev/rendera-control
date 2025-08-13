@@ -59,8 +59,8 @@
 					},
 					"play-animation": {
 						"list-name": "Play animation",
-						"display-text": "Play animation [i]{0}[/i] (loop: [i]{1}[/i])",
-						"description": "Play an animation on the current model.",
+						"display-text": "Play animation [i]{0}[/i] (loop: [i]{1}[/i], blend: [i]{2}[/i]s)",
+						"description": "Play an animation on the current model with optional blending.",
 						"params": {
 							"animation-name": {
 								"name": "Animation name",
@@ -69,6 +69,10 @@
 							"loop": {
 								"name": "Loop",
 								"desc": "Whether to loop the animation."
+							},
+							"blend-duration": {
+								"name": "Blend duration",
+								"desc": "Time in seconds to blend from current animation (0 for instant switch)."
 							}
 						}
 					},
