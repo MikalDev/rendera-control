@@ -18,6 +18,26 @@
 				"id": "on-model-created",
 				"scriptName": "OnModelCreated",
 				"isTrigger": true
+			},
+			{
+				"id": "on-animation-finished",
+				"scriptName": "OnAnimationFinished",
+				"isTrigger": true
+			},
+			{
+				"id": "on-animation-loop",
+				"scriptName": "OnAnimationLoop",
+				"isTrigger": true
+			},
+			{
+				"id": "on-animation-start",
+				"scriptName": "OnAnimationStart",
+				"isTrigger": true
+			},
+			{
+				"id": "on-animation-stop",
+				"scriptName": "OnAnimationStop",
+				"isTrigger": true
 			}
 		],
 		"actions": [
@@ -226,6 +246,11 @@
 				"id": "scale-z",
 				"expressionName": "ScaleZ",
 				"returnType": "number"
+			},
+			{
+				"id": "last-finished-animation",
+				"expressionName": "LastFinishedAnimation",
+				"returnType": "string"
 			}
 		]
 	}

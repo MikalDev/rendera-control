@@ -17,5 +17,29 @@ C3.Plugins.renderaController.Cnds =
 	{
 		// Trigger condition - returns true when triggered
 		return true;
+	},
+	
+	OnAnimationFinished(this: SDKInstanceClass)
+	{
+		// Trigger condition - returns true when triggered
+		return true;
+	},
+	
+	OnAnimationLoop(this: SDKInstanceClass)
+	{
+		// Trigger condition - returns true when triggered
+		return true;
+	},
+	
+	OnAnimationStart(this: SDKInstanceClass)
+	{
+		// Trigger condition - returns true when triggered
+		return true;
+	},
+	
+	OnAnimationStop(this: SDKInstanceClass)
+	{
+		// Trigger condition - returns true when triggered
+		return true;
 	}
 };

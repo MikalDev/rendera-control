@@ -38,6 +38,26 @@
 						"list-name": "On model created",
 						"display-text": "On model created",
 						"description": "Triggered when a 3D model has been successfully created and is ready to use."
+					},
+					"on-animation-finished": {
+						"list-name": "On animation finished",
+						"display-text": "On animation finished",
+						"description": "Triggered when a non-looping animation completes playing."
+					},
+					"on-animation-loop": {
+						"list-name": "On animation loop",
+						"display-text": "On animation loop",
+						"description": "Triggered when a looping animation completes one loop cycle."
+					},
+					"on-animation-start": {
+						"list-name": "On animation start",
+						"display-text": "On animation start",
+						"description": "Triggered when an animation begins playing."
+					},
+					"on-animation-stop": {
+						"list-name": "On animation stop",
+						"display-text": "On animation stop",
+						"description": "Triggered when an animation is manually stopped."
 					}
 				},
 				"actions": {
@@ -253,6 +273,10 @@
 					"scale-z": {
 						"description": "Get the current Z axis scale factor.",
 						"translated-name": "ScaleZ"
+					},
+					"last-finished-animation": {
+						"description": "Get the name of the last animation that finished playing.",
+						"translated-name": "LastFinishedAnimation"
 					}
 				}
 			}

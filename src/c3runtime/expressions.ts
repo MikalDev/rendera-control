@@ -35,6 +35,11 @@ C3.Plugins.renderaController.Exps =
 	ScaleZ(this: SDKInstanceClass)
 	{
 		return this._lastScaleZ;
+	},
+	
+	LastFinishedAnimation(this: SDKInstanceClass)
+	{
+		return this._lastAnimationName || "";
 	}
 };
 

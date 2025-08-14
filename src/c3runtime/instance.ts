@@ -31,6 +31,10 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 	_lastScaleX: number;
 	_lastScaleY: number;
 	_lastScaleZ: number;
+	
+	// Animation event tracking
+	_lastAnimationName: string;
+	_animationCallbacksRegistered: boolean;
 
 	constructor()
 	{
@@ -60,6 +64,10 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		this._lastScaleY = 1;
 		this._lastScaleZ = 1;
 		
+		// Initialize animation tracking
+		this._lastAnimationName = "";
+		this._animationCallbacksRegistered = false;
+		
 		// Listen for hierarchy ready event
 		this.addEventListener("hierarchyready", () => {
 			this._onHierarchyReady();
@@ -84,6 +92,9 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 	
 	_release()
 	{
+		// Unregister callbacks first
+		this._unregisterAnimationCallbacks();
+		
 		// Clean up model when instance is released
 		if (this._currentModel && globalThis.rendera?.instanceManager)
 		{
@@ -272,6 +283,9 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 				
 				console.log("Model created successfully:", modelPath);
 				
+				// Register animation callbacks with rendera
+				this._registerAnimationCallbacks();
+				
 				// Fire the OnModelCreated trigger
 				this._trigger(C3.Plugins.renderaController.Cnds.OnModelCreated);
 			}
@@ -287,6 +301,9 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		// Clear any existing model first
 		if (this._currentModel && globalThis.rendera?.instanceManager)
 		{
+			// Unregister callbacks before removing the model
+			this._unregisterAnimationCallbacks();
+			
 			globalThis.rendera.instanceManager.removeInstance(this._currentModel.instanceId);
 			this._currentModel = null;
 			// Clear command queue when destroying old model
@@ -310,6 +327,83 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 	_getCurrentModel(): Model | null
 	{
 		return this._currentModel;
+	}
+	
+	_registerAnimationCallbacks()
+	{
+		// Only register if we have a model and haven't registered yet
+		if (!this._currentModel || this._animationCallbacksRegistered) return;
+		
+		// Get the rendera singleton instance
+		const rendera = globalThis.rendera as any;
+		if (!rendera) 
+		{
+			console.log("[Rendera-Control] No rendera singleton found on globalThis");
+			return;
+		}
+		
+		console.log("[Rendera-Control] Attempting to register animation callback for instanceId:", this._currentModel.instanceId);
+		
+		// Register a single callback for all animation events
+		if (rendera.registerAnimationCallback)
+		{
+			console.log("[Rendera-Control] registerAnimationCallback method found, registering...");
+			rendera.registerAnimationCallback(this._currentModel.instanceId, (data: any) => {
+				console.log("[Rendera-Control] Animation callback received:", data);
+				// Check the event type to determine which trigger to fire
+				if (data.eventType === 'COMPLETE' || data.eventType === 'complete')
+				{
+					console.log("[Rendera-Control] Animation COMPLETE event, firing trigger for animation:", data.animationName);
+					// Store the animation name that finished
+					this._lastAnimationName = data.animationName || "";
+					// Fire the OnAnimationFinished trigger
+					this._trigger(C3.Plugins.renderaController.Cnds.OnAnimationFinished);
+				}
+				else if (data.eventType === 'LOOP' || data.eventType === 'loop')
+				{
+					console.log("[Rendera-Control] Animation LOOP event, firing trigger for animation:", data.animationName);
+					// Store the animation name that looped
+					this._lastAnimationName = data.animationName || "";
+					// Fire the OnAnimationLoop trigger
+					this._trigger(C3.Plugins.renderaController.Cnds.OnAnimationLoop);
+				}
+				else if (data.eventType === 'START' || data.eventType === 'start')
+				{
+					console.log("[Rendera-Control] Animation START event, firing trigger for animation:", data.animationName);
+					// Store the animation name that started
+					this._lastAnimationName = data.animationName || "";
+					// Fire the OnAnimationStart trigger
+					this._trigger(C3.Plugins.renderaController.Cnds.OnAnimationStart);
+				}
+				else if (data.eventType === 'STOP' || data.eventType === 'stop')
+				{
+					console.log("[Rendera-Control] Animation STOP event, firing trigger for animation:", data.animationName);
+					// Store the animation name that stopped
+					this._lastAnimationName = data.animationName || "";
+					// Fire the OnAnimationStop trigger
+					this._trigger(C3.Plugins.renderaController.Cnds.OnAnimationStop);
+				}
+			});
+			
+			this._animationCallbacksRegistered = true;
+			console.log("[Rendera-Control] Animation callback registered successfully");
+		}
+		else
+		{
+			console.log("[Rendera-Control] registerAnimationCallback method not found on rendera singleton");
+		}
+	}
+	
+	_unregisterAnimationCallbacks()
+	{
+		if (!this._currentModel || !this._animationCallbacksRegistered) return;
+		
+		const rendera = globalThis.rendera as any;
+		if (rendera && rendera.unregisterAnimationCallback)
+		{
+			rendera.unregisterAnimationCallback(this._currentModel.instanceId);
+			this._animationCallbacksRegistered = false;
+		}
 	}
 
 	// Methods to manually set override flags
