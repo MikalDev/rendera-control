@@ -35,6 +35,11 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 	// Animation event tracking
 	_lastAnimationName: string;
 	_animationCallbacksRegistered: boolean;
+	_currentPlayingAnimation: string;
+	
+	// Color and opacity tracking
+	_lastOpacity: number;
+	_lastColorRgb: [number, number, number];
 
 	constructor()
 	{
@@ -67,6 +72,11 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		// Initialize animation tracking
 		this._lastAnimationName = "";
 		this._animationCallbacksRegistered = false;
+		this._currentPlayingAnimation = "";
+		
+		// Initialize color and opacity tracking
+		this._lastOpacity = this.opacity;
+		this._lastColorRgb = [this.colorRgb[0], this.colorRgb[1], this.colorRgb[2]];
 		
 		// Listen for hierarchy ready event
 		this.addEventListener("hierarchyready", () => {
@@ -172,6 +182,23 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 					
 					this._lastSyncedAngle = this.angle;
 				}
+			}
+			
+			// Sync color and opacity with C3
+			if (this.opacity !== this._lastOpacity || 
+				this.colorRgb[0] !== this._lastColorRgb[0] || 
+				this.colorRgb[1] !== this._lastColorRgb[1] || 
+				this.colorRgb[2] !== this._lastColorRgb[2])
+			{
+				// Update opacity
+				(this._currentModel as any).setOpacity(this.opacity);
+				
+				// Update tint color - C3 colorRgb is Vec3Arr [r, g, b] with values 0-1, matching rendera API
+				(this._currentModel as any).setTintColor(this.colorRgb[0], this.colorRgb[1], this.colorRgb[2]);
+				
+				// Update tracking values
+				this._lastOpacity = this.opacity;
+				this._lastColorRgb = [this.colorRgb[0], this.colorRgb[1], this.colorRgb[2]];
 			}
 			
 			// Update animation
@@ -286,6 +313,9 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 				// Register animation callbacks with rendera
 				this._registerAnimationCallbacks();
 				
+				// Apply initial color and opacity from C3 instance
+				this._applyInitialColorAndOpacity();
+				
 				// Fire the OnModelCreated trigger
 				this._trigger(C3.Plugins.renderaController.Cnds.OnModelCreated);
 			}
@@ -356,6 +386,8 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 					console.log("[Rendera-Control] Animation COMPLETE event, firing trigger for animation:", data.animationName);
 					// Store the animation name that finished
 					this._lastAnimationName = data.animationName || "";
+					// Clear current playing animation since it completed
+					this._currentPlayingAnimation = "";
 					// Fire the OnAnimationFinished trigger
 					this._trigger(C3.Plugins.renderaController.Cnds.OnAnimationFinished);
 				}
@@ -415,6 +447,19 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 	setRotationOverride()
 	{
 		this._rotationOverridden = true;
+	}
+	
+	_applyInitialColorAndOpacity()
+	{
+		if (!this._currentModel) return;
+		
+		// Apply initial opacity and color from C3 instance
+		(this._currentModel as any).setOpacity(this.opacity);
+		(this._currentModel as any).setTintColor(this.colorRgb[0], this.colorRgb[1], this.colorRgb[2]);
+		
+		// Update tracking values
+		this._lastOpacity = this.opacity;
+		this._lastColorRgb = [this.colorRgb[0], this.colorRgb[1], this.colorRgb[2]];
 	}
 
 	_drawDebugInfo(renderer: IRenderer)

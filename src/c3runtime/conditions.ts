@@ -13,6 +13,16 @@ C3.Plugins.renderaController.Cnds =
 		return num > 100;
 	},
 	
+	IsAnimationPlaying(this: SDKInstanceClass, animationName: string)
+	{
+		return this._currentPlayingAnimation === animationName;
+	},
+	
+	IsAnyAnimationPlaying(this: SDKInstanceClass)
+	{
+		return this._currentPlayingAnimation !== "";
+	},
+	
 	OnModelCreated(this: SDKInstanceClass)
 	{
 		// Trigger condition - returns true when triggered

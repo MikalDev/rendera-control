@@ -34,6 +34,22 @@
 							}
 						}
 					},
+					"is-animation-playing": {
+						"list-name": "Is animation playing",
+						"display-text": "Animation [i]{0}[/i] is playing",
+						"description": "Check if a specific animation is currently playing.",
+						"params": {
+							"animation-name": {
+								"name": "Animation name",
+								"desc": "Name of the animation to check if playing."
+							}
+						}
+					},
+					"is-any-animation-playing": {
+						"list-name": "Is any animation playing",
+						"display-text": "Any animation is playing",
+						"description": "Check if any animation is currently playing, regardless of name."
+					},
 					"on-model-created": {
 						"list-name": "On model created",
 						"display-text": "On model created",

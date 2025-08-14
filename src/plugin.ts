@@ -41,6 +41,7 @@ const PLUGIN_CLASS = SDK.Plugins.renderaController = class MyDrawingPlugin exten
 		this._info.SetSupportsZElevation(true);	// support z-elevation for 3D positioning
 		this._info.SetHasImage(true);
 		this._info.SetSupportsEffects(true);		// allow effects
+		this._info.SetSupportsColor(true);		// support color tinting for 3D models
 		this._info.SetMustPreDraw(true);
 		this._info.SetRuntimeModuleMainScript("c3runtime/main.js");
 		

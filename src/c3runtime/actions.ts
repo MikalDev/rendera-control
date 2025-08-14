@@ -35,11 +35,13 @@ C3.Plugins.renderaController.Acts =
 		if (this._currentModel)
 		{
 			this._currentModel.playAnimation(animationName, animationOptions);
+			this._currentPlayingAnimation = animationName;
 		}
 		else
 		{
 			this._commandQueue.push(() => {
 				this._currentModel?.playAnimation(animationName, animationOptions);
+				this._currentPlayingAnimation = animationName;
 			});
 		}
 	},
@@ -49,11 +51,13 @@ C3.Plugins.renderaController.Acts =
 		if (this._currentModel)
 		{
 			this._currentModel.stopAnimation();
+			this._currentPlayingAnimation = "";
 		}
 		else
 		{
 			this._commandQueue.push(() => {
 				this._currentModel?.stopAnimation();
+				this._currentPlayingAnimation = "";
 			});
 		}
 	},

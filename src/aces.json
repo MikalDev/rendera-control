@@ -15,6 +15,20 @@
 				]
 			},
 			{
+				"id": "is-animation-playing",
+				"scriptName": "IsAnimationPlaying",
+				"params": [
+					{
+						"id": "animation-name",
+						"type": "string"
+					}
+				]
+			},
+			{
+				"id": "is-any-animation-playing",
+				"scriptName": "IsAnyAnimationPlaying"
+			},
+			{
 				"id": "on-model-created",
 				"scriptName": "OnModelCreated",
 				"isTrigger": true
