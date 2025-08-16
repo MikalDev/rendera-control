@@ -52,7 +52,14 @@ const PLUGIN_CLASS = SDK.Plugins.renderaController = class MyDrawingPlugin exten
 		
 		this._info.SetProperties([
 			new SDK.PluginProperty("text", "model-name", ""),
-			new SDK.PluginProperty("check", "debug-rendering", false)
+			new SDK.PluginProperty("check", "debug-rendering", false),
+			new SDK.PluginProperty("float", "rotation-x", 0),
+			new SDK.PluginProperty("float", "rotation-y", 0),
+			new SDK.PluginProperty("float", "rotation-z", 0),
+			new SDK.PluginProperty("combo", "rotation-order", {
+				initialValue: "XYZ",
+				items: ["XYZ", "XZY", "YXZ", "YZX", "ZXY", "ZYX"]
+			})
 		]);
 		
 		SDK.Lang.PopContext();		// .properties

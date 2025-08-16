@@ -1,5 +1,5 @@
 /// <reference path="../../ts-defs/runtime/AddonSDK.d.ts" />
-/// <reference path="../../rendera-types/index.d.ts" />
+/// <reference path="../../rendera-types/modules/index.d.ts" />
 
 import type { SDKInstanceClass } from "./instance.ts";
 import type { Model, Transform } from '../../rendera-types/index';

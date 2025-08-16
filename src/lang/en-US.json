@@ -17,6 +17,30 @@
 					"debug-rendering": {
 						"name": "Debug rendering",
 						"desc": "Enable debug rendering overlay to show model and system information."
+					},
+					"rotation-x": {
+						"name": "X rotation",
+						"desc": "Initial rotation around the X axis in degrees."
+					},
+					"rotation-y": {
+						"name": "Y rotation",
+						"desc": "Initial rotation around the Y axis in degrees."
+					},
+					"rotation-z": {
+						"name": "Z rotation",
+						"desc": "Initial rotation around the Z axis in degrees."
+					},
+					"rotation-order": {
+						"name": "Rotation order",
+						"desc": "Order in which rotations are applied (e.g., XYZ means rotate X first, then Y, then Z).",
+						"items": {
+							"XYZ": "XYZ",
+							"XZY": "XZY", 
+							"YXZ": "YXZ",
+							"YZX": "YZX",
+							"ZXY": "ZXY",
+							"ZYX": "ZYX"
+						}
 					}
 				},
 				"aceCategories": {

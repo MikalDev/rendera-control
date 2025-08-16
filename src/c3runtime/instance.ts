@@ -1,6 +1,6 @@
 
 /// <reference path="../../ts-defs/runtime/AddonSDK.d.ts" />
-/// <reference path="../../rendera-types/index.d.ts" />
+/// <reference path="../../rendera-types/modules/index.d.ts" />
 
 import type { InstanceManager, Model, InstanceId, AnimationOptions } from '../../rendera-types/index';
 
@@ -15,6 +15,12 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 	_debugRendering: boolean;
 	_spriteVisible: boolean;
 	_commandQueue: Array<() => void>;
+	
+	// Initial rotation properties
+	_initialRotationX: number;
+	_initialRotationY: number;
+	_initialRotationZ: number;
+	_rotationOrder: string;
 	
 	// Position tracking for sync
 	_positionOverridden: boolean;
@@ -88,6 +94,12 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		{
 			this._modelName = properties[0] as string || "";
 			this._debugRendering = properties[1] as boolean;
+			this._initialRotationX = properties[2] as number || 0;
+			this._initialRotationY = properties[3] as number || 0;
+			this._initialRotationZ = properties[4] as number || 0;
+			const rotationOrderIndex = properties[5] as number || 0;
+			const rotationOrders = ["XYZ", "XZY", "YXZ", "YZX", "ZXY", "ZYX"];
+			this._rotationOrder = rotationOrders[rotationOrderIndex] || "XYZ";
 			
 			// Create initial model if name is provided
 			if (this._modelName)
@@ -305,6 +317,9 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 				// Set initial position based on Construct instance position
 				model.setPosition(this.x, this.y, this.zElevation);
 				
+				// Apply initial rotation from properties
+				this._applyInitialRotation(model);
+				
 				// Execute any queued commands
 				this._executeQueuedCommands();
 				
@@ -460,6 +475,108 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		// Update tracking values
 		this._lastOpacity = this.opacity;
 		this._lastColorRgb = [this.colorRgb[0], this.colorRgb[1], this.colorRgb[2]];
+	}
+
+	_applyInitialRotation(model: Model)
+	{
+		// Skip if all rotation values are zero
+		if (this._initialRotationX === 0 && this._initialRotationY === 0 && this._initialRotationZ === 0) {
+			return;
+		}
+
+		// Convert degrees to radians
+		const xRad = this._initialRotationX * Math.PI / 180;
+		const yRad = this._initialRotationY * Math.PI / 180;
+		const zRad = this._initialRotationZ * Math.PI / 180;
+
+		// Apply rotation order based on property selection
+		const rotationOrders: { [key: string]: number[] } = {
+			"XYZ": [0, 1, 2],  // X first, then Y, then Z
+			"XZY": [0, 2, 1],  // X first, then Z, then Y
+			"YXZ": [1, 0, 2],  // Y first, then X, then Z
+			"YZX": [1, 2, 0],  // Y first, then Z, then X
+			"ZXY": [2, 0, 1],  // Z first, then X, then Y
+			"ZYX": [2, 1, 0]   // Z first, then Y, then X
+		};
+
+		const order = rotationOrders[this._rotationOrder] || rotationOrders["XYZ"];
+		const rotations = [xRad, yRad, zRad];
+
+		// Create rotation matrices
+		const cos = Math.cos;
+		const sin = Math.sin;
+		
+		// Create individual rotation matrices
+		const matrices: number[][][] = [
+			// X rotation matrix
+			[[1, 0, 0], [0, cos(rotations[0]), -sin(rotations[0])], [0, sin(rotations[0]), cos(rotations[0])]],
+			// Y rotation matrix  
+			[[cos(rotations[1]), 0, sin(rotations[1])], [0, 1, 0], [-sin(rotations[1]), 0, cos(rotations[1])]],
+			// Z rotation matrix
+			[[cos(rotations[2]), -sin(rotations[2]), 0], [sin(rotations[2]), cos(rotations[2]), 0], [0, 0, 1]]
+		];
+
+		// Multiply matrices in the specified order
+		let result = matrices[order[0]];
+		for (let i = 1; i < 3; i++) {
+			result = this._multiplyMatrices(result, matrices[order[i]]);
+		}
+
+		// Convert rotation matrix to quaternion
+		const quaternion = this._matrixToQuaternion(result);
+		
+		// Convert to Float32Array for the API
+		const quaternionArray = new Float32Array(quaternion);
+		
+		// Apply rotation to model
+		model.setRotation(quaternionArray);
+	}
+
+	_multiplyMatrices(a: number[][], b: number[][]): number[][] {
+		const result: number[][] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+		for (let i = 0; i < 3; i++) {
+			for (let j = 0; j < 3; j++) {
+				for (let k = 0; k < 3; k++) {
+					result[i][j] += a[i][k] * b[k][j];
+				}
+			}
+		}
+		return result;
+	}
+
+	_matrixToQuaternion(matrix: number[][]): [number, number, number, number] {
+		const m = matrix;
+		const trace = m[0][0] + m[1][1] + m[2][2];
+		
+		if (trace > 0) {
+			const s = Math.sqrt(trace + 1.0) * 2; // s = 4 * qw
+			const w = 0.25 * s;
+			const x = (m[2][1] - m[1][2]) / s;
+			const y = (m[0][2] - m[2][0]) / s;
+			const z = (m[1][0] - m[0][1]) / s;
+			return [x, y, z, w];
+		} else if (m[0][0] > m[1][1] && m[0][0] > m[2][2]) {
+			const s = Math.sqrt(1.0 + m[0][0] - m[1][1] - m[2][2]) * 2; // s = 4 * qx
+			const w = (m[2][1] - m[1][2]) / s;
+			const x = 0.25 * s;
+			const y = (m[0][1] + m[1][0]) / s;
+			const z = (m[0][2] + m[2][0]) / s;
+			return [x, y, z, w];
+		} else if (m[1][1] > m[2][2]) {
+			const s = Math.sqrt(1.0 + m[1][1] - m[0][0] - m[2][2]) * 2; // s = 4 * qy
+			const w = (m[0][2] - m[2][0]) / s;
+			const x = (m[0][1] + m[1][0]) / s;
+			const y = 0.25 * s;
+			const z = (m[1][2] + m[2][1]) / s;
+			return [x, y, z, w];
+		} else {
+			const s = Math.sqrt(1.0 + m[2][2] - m[0][0] - m[1][1]) * 2; // s = 4 * qz
+			const w = (m[1][0] - m[0][1]) / s;
+			const x = (m[0][2] + m[2][0]) / s;
+			const y = (m[1][2] + m[2][1]) / s;
+			const z = 0.25 * s;
+			return [x, y, z, w];
+		}
 	}
 
 	_drawDebugInfo(renderer: IRenderer)
