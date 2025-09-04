@@ -15,6 +15,7 @@
 	"editor-scripts": [
 						"plugin.js",
 						"type.js",
+						"portable/z3d-portable-editor.js",
 						"instance.js"
 					],
 	"file-list": [
@@ -31,6 +32,7 @@
 		"icon.svg",
 		"plugin.js",
 		"type.js",
+		"portable/z3d-portable-editor.js",
 		"instance.js"
 	]
 }

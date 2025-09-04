@@ -10,6 +10,11 @@
 				"description": "Control Rendera 3D rendering engine from Construct 3.",
 				"help-url": "https://www.construct.net",
 				"properties": {
+					"open-z3d-object-editor": {
+						"name": "Open Object Editor",
+						"desc": "Open the Z3D Object Editor for editing individual 3D objects",
+						"link-text": "Launch Editor"
+					},
 					"model-name": {
 						"name": "Model name",
 						"desc": "Name of the 3D model to use when this instance is placed in the editor."
@@ -41,6 +46,20 @@
 							"ZXY": "ZXY",
 							"ZYX": "ZYX"
 						}
+					},
+					"unit-scale":      { "name": "Unit scale",   "desc": "Pixels per 1 unit of model space." },
+
+					"scale":   { "name": "Scale",   "desc": "Uniform scale factor" },
+					"scale-x": { "name": "Scale X", "desc": "X-axis scale" },
+					"scale-y": { "name": "Scale Y", "desc": "Y-axis scale" },
+					"scale-z": { "name": "Scale Z", "desc": "Z-axis scale" },
+
+					"wireframe":{ "name": "Wireframe", "desc": "Render as wireframe" },
+
+					"z3d-json": {
+						"name": "Z3D Configuration",
+						"desc": "Advanced JSON configuration for object editor, scene settings, viewport display, and performance options",
+						"placeholder": "Launch the Z3D Object Editor to modify these settings"
 					}
 				},
 				"aceCategories": {
