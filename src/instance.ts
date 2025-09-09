@@ -4,6 +4,12 @@
 
 import type { RenderaControllerType } from './type';
 
+// Debug flag - set to true to enable console logging for this file
+const DEBUG_RENDERA = false;
+const log = DEBUG_RENDERA ? console.log.bind(console) : () => {};
+const warn = DEBUG_RENDERA ? console.warn.bind(console) : () => {};
+const error = console.error.bind(console); // Always show errors
+
 const SDK = (globalThis as any).SDK;
 const PLUGIN_CLASS = SDK.Plugins.renderaController;
 
@@ -97,15 +103,15 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
                     proj.GetProjectFileByExportPath(path);
         
         if (!file) {
-            console.warn(`[RenderaController] Project file not found: ${path}`);
+            warn(`[RenderaController] Project file not found: ${path}`);
             return null;
         }
         
         try {
             const blob = await file.GetBlob();
             return await blob.arrayBuffer();
-        } catch (error) {
-            console.error(`[RenderaController] Failed to load file ${path}:`, error);
+        } catch (err) {
+            error(`[RenderaController] Failed to load file ${path}:`, err);
             return null;
         }
     }
@@ -140,7 +146,7 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
                 // Don't log spam, just return false
                 return false;
             } else if (this._initAttempts === this._maxInitAttempts) {
-                console.warn('[RenderaController] Z3DPortable not available after', this._maxInitAttempts, 'attempts');
+                warn('[RenderaController] Z3DPortable not available after', this._maxInitAttempts, 'attempts');
             }
             return false;
         }
@@ -153,7 +159,7 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
         } = portable;
         
         if (!Z3DObjectEditor || !CanvasRenderer || !MeshLoader || !TextureManager) {
-            console.warn('[RenderaController] Required components not found in Z3DPortable. Available:', Object.keys(portable));
+            warn('[RenderaController] Required components not found in Z3DPortable. Available:', Object.keys(portable));
             return false;
         }
         
@@ -161,11 +167,11 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
             // Initialize the shared TextureManager only once (first instance creates it)
             if (!this._type.textureManager && TextureManager) {
                 this._type.textureManager = new TextureManager(this._type);
-                console.log('[RenderaController] Shared TextureManager initialized for texture caching');
+                log('[RenderaController] Shared TextureManager initialized for texture caching');
             }
             
             // Initialize components directly - they handle all behavior
-            console.log('[RenderaController] Creating components with propertyMapping:', this.propertyMapping);
+            log('[RenderaController] Creating components with propertyMapping:', this.propertyMapping);
             this._renderer = new CanvasRenderer(this, this._type);
             this._loader = new MeshLoader(this, this._type);
             this._editor = new Z3DObjectEditor(this);
@@ -176,13 +182,13 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
             }
             
             this._initialized = true;
-            console.log('[RenderaController] Components initialized successfully');
+            log('[RenderaController] Components initialized successfully');
             
             // Start ticking for animations
             this._startTicking();
             return true;
-        } catch (error) {
-            console.error('[RenderaController] Failed to initialize components:', error);
+        } catch (err) {
+            error('[RenderaController] Failed to initialize components:', err);
             return false;
         }
     }
@@ -192,10 +198,10 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
         
         // Check if we're in the active layout
         const isActive = this._isInActiveLayout();
-        console.log(`[RenderaController] doInitialize - Layout active: ${isActive}, Model: ${this._modelPath || 'none'}`);
+        log(`[RenderaController] doInitialize - Layout active: ${isActive}, Model: ${this._modelPath || 'none'}`);
         
         if (!isActive) {
-            console.log(`[RenderaController] Skipping initialization for inactive layout`);
+            log(`[RenderaController] Skipping initialization for inactive layout`);
             return; // Skip initialization for inactive layouts
         }
         
@@ -228,7 +234,7 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
                 if (!isActive) {
                     // Only log once per instance
                     if (this._initAttempts === 1) {
-                        console.log(`[RenderaController] Instance in layout '${layoutName}', but active is '${activeLayoutName}'`);
+                        log(`[RenderaController] Instance in layout '${layoutName}', but active is '${activeLayoutName}'`);
                     }
                 }
                 
@@ -270,7 +276,7 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
         
         // Don't initialize immediately in OnCreate
         // Wait for Draw() where we can properly check the layout
-        console.log(`[RenderaController] OnCreate - Model: ${this._modelPath || 'none'}`);
+        log(`[RenderaController] OnCreate - Model: ${this._modelPath || 'none'}`);
     }
     
     OnPropertyChanged(id: string) {
@@ -339,7 +345,7 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
     }
     
     Release() {
-        console.log('[RenderaController] Release called');
+        log('[RenderaController] Release called');
         
         // Stop ticking
         this._tickScheduled = false;
@@ -360,8 +366,8 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
             if (this._renderer) {
                 this._renderer.dispose();
             }
-        } catch (error) {
-            console.error('[RenderaController] Error during release:', error);
+        } catch (err) {
+            error('[RenderaController] Error during release:', err);
         }
         
         this._editor = null;
@@ -385,7 +391,7 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
                 centerOnScreen: true
             });
         } else {
-            console.warn('[RenderaController] Editor not initialized');
+            warn('[RenderaController] Editor not initialized');
         }
     }
     
@@ -396,12 +402,12 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
     private _loadModel(path: string) {
         if (!this._loader) return;
         
-        console.log(`[RenderaController] Loading model: ${path}`);
+        log(`[RenderaController] Loading model: ${path}`);
         this._loader.loadModel(path || '').then(() => {
-            console.log(`[RenderaController] Model loaded: ${path}`);
+            log(`[RenderaController] Model loaded: ${path}`);
             this._scheduleForceRedraw();
-        }).catch((error: any) => {
-            console.error(`[RenderaController] Failed to load model: ${path}`, error);
+        }).catch((err: any) => {
+            error(`[RenderaController] Failed to load model: ${path}`, err);
         });
     }
     
@@ -443,10 +449,10 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
                 // Force redraw with new vertices
                 this.markDirty();
                 
-                console.log(`[RenderaController] Updated skinned mesh - ${this._skinnedVertices?.length || 0} vertices`);
+                // console.log(`[RenderaController] Updated skinned mesh - ${this._skinnedVertices?.length || 0} vertices`);
             }
-        } catch (error) {
-            console.error("[RenderaController] Failed to handle skinned mesh update:", error);
+        } catch (err) {
+            error("[RenderaController] Failed to handle skinned mesh update:", err);
         }
     }
     
@@ -461,7 +467,7 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
             const skinnedMesh = config?.object?.skinnedMesh;
             
             if (skinnedMesh && skinnedMesh.verticesCompressed) {
-                console.log("[RenderaController] Loading stored skinned mesh data");
+                log("[RenderaController] Loading stored skinned mesh data");
                 
                 this._skinnedVertices = this._decompressVertices(skinnedMesh.verticesCompressed);
                 this._lastSkinnedTimestamp = skinnedMesh.timestamp || 0;
@@ -470,12 +476,12 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
                     this._meshVisibility = skinnedMesh.meshVisibility;
                 }
                 
-                console.log(`[RenderaController] Loaded ${this._skinnedVertices?.length || 0} vertices from stored data`);
+                log(`[RenderaController] Loaded ${this._skinnedVertices?.length || 0} vertices from stored data`);
                 
                 this.markDirty();
             }
-        } catch (error) {
-            console.error("[RenderaController] Failed to load stored skinned mesh data:", error);
+        } catch (err) {
+            error("[RenderaController] Failed to load stored skinned mesh data:", err);
         }
     }
     
@@ -492,10 +498,10 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
             const floatBytes = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
             const result = new Float32Array(floatBytes);
             
-            console.log(`[RenderaController] Decompressed: ${bytes.length} bytes -> ${result.length} floats`);
+            // console.log(`[RenderaController] Decompressed: ${bytes.length} bytes -> ${result.length} floats`);
             return result;
-        } catch (error) {
-            console.error("[RenderaController] Failed to decompress vertices:", error);
+        } catch (err) {
+            error("[RenderaController] Failed to decompress vertices:", err);
             return new Float32Array();
         }
     }
