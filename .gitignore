@@ -3,6 +3,9 @@
 src/**/*.js
 src/**/*.js.map
 
+# Exception: keep the portable editor JS checked in (hand-authored, not generated)
+!src/portable/z3d-portable-editor.js
+
 # Node.js dependencies
 node_modules/
 npm-debug.log*
