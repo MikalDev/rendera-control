@@ -14,7 +14,7 @@
     "setup:butler": "node scripts/setup-butler.js",
     "deploy:itch": "npm run package && node scripts/upload-to-itch.js",
     "upload:itch": "node scripts/upload-to-itch.js",
-  "dev-server": "node scripts/dev-server.js ."
+    "dev-server": "node scripts/dev-server.js ."
   },
   "devDependencies": {
     "archiver": "^6.0.1",

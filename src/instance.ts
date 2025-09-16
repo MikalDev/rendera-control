@@ -15,8 +15,8 @@ const PLUGIN_CLASS = SDK.Plugins.renderaController;
 
 class RenderaControllerInstance extends SDK.IWorldInstanceBase {
     // Z3D Components
-    private _renderer: any; // CanvasRenderer from Z3DPortable
-    private _loader: any; // MeshLoader from Z3DPortable  
+    private _renderer: any; // InstanceRenderer from Z3DPortable
+    private _loader: any; // MeshLoader from Z3DPortable
     private _editor: any; // Z3DObjectEditor from Z3DPortable
     private readonly _type: RenderaControllerType; // Shared type from Construct SDK
     
@@ -135,7 +135,7 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
     // Initialization
     // ===============================================
     
-    private _initializeComponents(): boolean {
+    private async _initializeComponents(): Promise<boolean> {
         if (this._initialized) return true;
         
         this._initAttempts++;
@@ -151,28 +151,33 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
             return false;
         }
         
-        const { 
+        const {
             Z3DObjectEditor,
-            CanvasRenderer,
+            InstanceRenderer,
             MeshLoader,
-            TextureManager
+            TextureManager,
+            initializeThreeJS
         } = portable;
-        
-        if (!Z3DObjectEditor || !CanvasRenderer || !MeshLoader || !TextureManager) {
+
+        if (!Z3DObjectEditor || !InstanceRenderer || !MeshLoader || !TextureManager) {
             warn('[RenderaController] Required components not found in Z3DPortable. Available:', Object.keys(portable));
             return false;
         }
-        
+
         try {
+            // Initialize Three.js if available
+            if (initializeThreeJS) {
+                await initializeThreeJS();
+            }
             // Initialize the shared TextureManager only once (first instance creates it)
             if (!this._type.textureManager && TextureManager) {
                 this._type.textureManager = new TextureManager(this._type);
                 log('[RenderaController] Shared TextureManager initialized for texture caching');
             }
-            
+
             // Initialize components directly - they handle all behavior
             log('[RenderaController] Creating components with propertyMapping:', this.propertyMapping);
-            this._renderer = new CanvasRenderer(this, this._type);
+            this._renderer = new InstanceRenderer(this, this._type);
             this._loader = new MeshLoader(this, this._type);
             this._editor = new Z3DObjectEditor(this);
             
@@ -193,20 +198,20 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
         }
     }
     
-    doInitialize() {
+    async doInitialize() {
         if (this._initialized) return;
-        
+
         // Check if we're in the active layout
         const isActive = this._isInActiveLayout();
         log(`[RenderaController] doInitialize - Layout active: ${isActive}, Model: ${this._modelPath || 'none'}`);
-        
+
         if (!isActive) {
             log(`[RenderaController] Skipping initialization for inactive layout`);
             return; // Skip initialization for inactive layouts
         }
-        
-        if (!this._initializeComponents()) {
-            // Try again later  
+
+        if (!await this._initializeComponents()) {
+            // Try again later
             this._deferredInit();
         } else if (this._modelPath) {
             // Load model
@@ -251,8 +256,8 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
     }
     
     private _deferredInit() {
-        const tryInit = () => {
-            if (this._initializeComponents()) {
+        const tryInit = async () => {
+            if (await this._initializeComponents()) {
                 if (this._modelPath) {
                     this._loadModel(this._modelPath);
                 }
