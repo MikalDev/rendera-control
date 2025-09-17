@@ -23,6 +23,7 @@ var Z3DPortable = (() => {
   __export(editor_exports, {
     CanvasRenderer: () => CanvasRenderer,
     FileFetcher: () => FileFetcher,
+    InstanceRenderer: () => InstanceRenderer,
     MeshLoader: () => MeshLoader,
     MeshProcessor: () => MeshProcessor,
     PropertyAdapter: () => PropertyAdapter,
@@ -30,9 +31,11 @@ var Z3DPortable = (() => {
     Z3DObjectEditor: () => Z3DObjectEditor,
     applyInstanceTransform: () => applyInstanceTransform,
     bakeVerticesWithYFlip: () => bakeVerticesWithYFlip,
+    createDefaultZ3DConfig: () => createDefaultZ3DConfig,
     createInstanceMatrix: () => createInstanceMatrix,
     default: () => editor_default,
     getWorldAABB: () => getWorldAABB,
+    initializeThreeJS: () => initializeThreeJS,
     setInstanceFootprint: () => setInstanceFootprint
   });
 
@@ -132,8 +135,8 @@ var Z3DPortable = (() => {
           };
         }
         return config;
-      } catch (error7) {
-        console.warn("[PropertyAdapter] Failed to parse z3d-json, using defaults:", error7);
+      } catch (error8) {
+        console.warn("[PropertyAdapter] Failed to parse z3d-json, using defaults:", error8);
         return this.getDefaultZ3DConfig();
       }
     }
@@ -417,24 +420,24 @@ var Z3DPortable = (() => {
     static getEmbeddedThreeJS() {
       try {
         return atob(THREEJS_BASE64);
-      } catch (error7) {
-        console.error("[ThreeJS Loader] Failed to decode Three.js base64:", error7);
+      } catch (error8) {
+        console.error("[ThreeJS Loader] Failed to decode Three.js base64:", error8);
         throw new Error("Failed to load Three.js");
       }
     }
     static getEmbeddedGLTFLoader() {
       try {
         return atob(GLTF_LOADER_BASE64);
-      } catch (error7) {
-        console.error("[ThreeJS Loader] Failed to decode GLTF Loader base64:", error7);
+      } catch (error8) {
+        console.error("[ThreeJS Loader] Failed to decode GLTF Loader base64:", error8);
         throw new Error("Failed to load GLTF Loader");
       }
     }
     static getEmbeddedOrbitControls() {
       try {
         return atob(ORBIT_CONTROLS_BASE64);
-      } catch (error7) {
-        console.error("[ThreeJS Loader] Failed to decode OrbitControls base64:", error7);
+      } catch (error8) {
+        console.error("[ThreeJS Loader] Failed to decode OrbitControls base64:", error8);
         throw new Error("Failed to load OrbitControls");
       }
     }
@@ -6280,349 +6283,407 @@ class StatsOverlay {\r
 \r
 // Make it globally available\r
 window.StatsOverlay = StatsOverlay;`,
-        "sceneTopbarControls": `/* FILE: editor/z3d-object-editor/templates/scripts/components/scene-topbar-controls.js */\r
-/* Scene Topbar Controls - Manages the scene topbar buttons and functionality */\r
-\r
-// Logging (per-file toggle; errors always log)\r
-const DEBUG_SCENE_TOPBAR = false;\r
-const stLog = DEBUG_SCENE_TOPBAR ? console.log.bind(console) : () => {};\r
-const stWarn = DEBUG_SCENE_TOPBAR ? console.warn.bind(console) : () => {};\r
-const stError = console.error.bind(console);\r
-\r
-class SceneTopbarControls {\r
-    constructor() {\r
-        this.container = null;\r
-        this.statsOverlay = null;\r
-        this.gizmoController = null;\r
-        \r
-        // Toggle states\r
-        this.showOverlays = false;\r
-        this.showGizmos = true;\r
-    this.snapEnabled = false;\r
-        \r
-    stLog('[SceneTopbarControls] Created');\r
-    }\r
-    \r
-    initialize() {\r
-        // Find or create the scene topbar\r
-        this.container = document.querySelector('.scene-topbar');\r
-        \r
-        if (!this.container) {\r
-            stError('[SceneTopbarControls] Scene topbar not found');\r
-            return;\r
-        }\r
-        \r
-        // Ensure the topbar has proper styling for visibility and full width\r
-        this.container.style.zIndex = '1000';\r
-        this.container.style.position = 'absolute';\r
-        this.container.style.pointerEvents = 'auto';\r
-        this.container.style.top = '0';\r
-        this.container.style.left = '0';\r
-        this.container.style.right = '0';\r
-        this.container.style.width = '100%';\r
-        this.container.style.height = '36px';\r
-        this.container.style.background = 'rgba(37, 37, 37, 0.95)';\r
-        this.container.style.backdropFilter = 'blur(10px)';\r
-        this.container.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';\r
-        \r
-        // Restructure the topbar with three containers\r
-        this.restructureTopbar();\r
-        \r
-        // Initialize stats overlay\r
-        this.initializeStatsOverlay();\r
-        \r
-        // Setup button handlers\r
-        this.setupButtonHandlers();\r
-        \r
-        // Ensure initial states are correct\r
-        this.updateButtonStates();\r
-        \r
-    stLog('[SceneTopbarControls] Initialized with gizmos:', this.showGizmos, 'overlays:', this.showOverlays);\r
-    }\r
-    \r
-    restructureTopbar() {\r
-        // Clear existing content\r
-        this.container.innerHTML = '';\r
-        \r
-        // Create wrapper for all controls (can be hidden/shown as a group)\r
-        const controlsWrapper = document.createElement('div');\r
-        controlsWrapper.className = 'topbar-controls-wrapper';\r
-        controlsWrapper.style.width = '100%';\r
-        controlsWrapper.style.height = '100%';\r
-        controlsWrapper.style.display = 'flex';\r
-        controlsWrapper.style.alignItems = 'center';\r
-        controlsWrapper.style.justifyContent = 'space-between';\r
-        controlsWrapper.style.padding = '0 12px';\r
-        controlsWrapper.style.boxSizing = 'border-box';\r
-        controlsWrapper.innerHTML = \`\r
-            <!-- Left Container -->\r
-            <div class="topbar-left" style="flex: 0 0 auto;">\r
-                <!-- Future buttons go here -->\r
-            </div>\r
-            \r
-            <!-- Center Container -->\r
-            <div class="topbar-center" style="flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 6px;">\r
-                <button id="toggle-snap" class="btn btn-sm topbar-btn" title="Toggle Snap (position/rotation)">\r
-                    <span class="btn-icon">\u{1F512}</span>\r
-                    <span class="btn-text">Snap</span>\r
-                </button>\r
-            </div>\r
-            \r
-            <!-- Right Container -->\r
-            <div class="topbar-right" style="flex: 0 0 auto; margin-left: auto; display: flex; gap: 4px;">\r
-                <button id="toggle-gizmos" class="btn btn-sm topbar-btn active" title="Toggle Gizmos" style="margin-right: 4px;">\r
-                    <span class="btn-icon">\u{1F3AF}</span>\r
-                    <span class="btn-text">Gizmos</span>\r
-                </button>\r
-                <button id="toggle-overlays" class="btn btn-sm topbar-btn" title="Toggle Overlays">\r
-                    <span class="btn-icon">\u{1F4CA}</span>\r
-                    <span class="btn-text">Overlays</span>\r
-                </button>\r
-            </div>\r
-        \`;\r
-        \r
-        this.container.appendChild(controlsWrapper);\r
-        \r
-        // Cache references\r
-        this.controlsWrapper = controlsWrapper;\r
-        this.leftContainer = controlsWrapper.querySelector('.topbar-left');\r
-        this.centerContainer = controlsWrapper.querySelector('.topbar-center');\r
-        this.rightContainer = controlsWrapper.querySelector('.topbar-right');\r
-        \r
-        // Cache button references\r
-        this.gizmosButton = document.getElementById('toggle-gizmos');\r
-        this.overlaysButton = document.getElementById('toggle-overlays');\r
-    this.snapButton = document.getElementById('toggle-snap');\r
-        \r
-        // Set initial button states\r
-        this.updateButtonStates();\r
-    }\r
-    \r
-    initializeStatsOverlay() {\r
-        // Create and initialize the stats overlay\r
-        if (!window.StatsOverlay) {\r
-            stWarn('[SceneTopbarControls] StatsOverlay class not available');\r
-            return;\r
-        }\r
-        \r
-        this.statsOverlay = new StatsOverlay();\r
-        this.statsOverlay.initialize();\r
-    }\r
-    \r
-    setupButtonHandlers() {\r
-        // Toggle Overlays button\r
-        if (this.overlaysButton) {\r
-            this.overlaysButton.addEventListener('click', (e) => {\r
-                this.handleButtonClick(e.currentTarget);\r
-                this.toggleOverlays();\r
-            });\r
-        }\r
-        \r
-        // Toggle Gizmos button\r
-        if (this.gizmosButton) {\r
-            this.gizmosButton.addEventListener('click', (e) => {\r
-                this.handleButtonClick(e.currentTarget);\r
-                this.toggleGizmos();\r
-            });\r
-        }\r
-\r
-        // Toggle Snap button\r
-        if (this.snapButton) {\r
-            this.snapButton.addEventListener('click', (e) => {\r
-                this.handleButtonClick(e.currentTarget);\r
-                this.toggleSnap();\r
-            });\r
-        }\r
-    }\r
-    \r
-    handleButtonClick(button) {\r
-        // Add clicked class for animation\r
-        button.classList.add('clicked');\r
-        \r
-        // Force button to lose focus\r
-        button.blur();\r
-        \r
-        // Remove the class after animation completes\r
-        setTimeout(() => {\r
-            button.classList.remove('clicked');\r
-        }, 300);\r
-    }\r
-    \r
-    toggleOverlays() {\r
-        this.showOverlays = !this.showOverlays;\r
-        \r
-        // Toggle stats overlay\r
-        if (this.statsOverlay) {\r
-            if (this.showOverlays) {\r
-                this.statsOverlay.show();\r
-            } else {\r
-                this.statsOverlay.hide();\r
-            }\r
-        }\r
-        \r
-        // Update button state\r
-        this.updateButtonStates();\r
-        \r
-    stLog('[SceneTopbarControls] Overlays toggled:', this.showOverlays);\r
-    }\r
-    \r
-    toggleGizmos() {\r
-        this.showGizmos = !this.showGizmos;\r
-        \r
-        // Send message to worker to toggle transform gizmo\r
-        if (window.worker) {\r
-            window.worker.postMessage({\r
-                type: 'TOGGLE_GIZMOS',\r
-                data: { visible: this.showGizmos }\r
-            });\r
-        }\r
-        \r
-        // Toggle viewport buttons visibility\r
-        if (window.viewportButtons) {\r
-            window.viewportButtons.setVisible(this.showGizmos);\r
-        }\r
-        \r
-        // Toggle viewport gizmo\r
-        const viewportGizmoContainer = document.getElementById('viewport-gizmo-container');\r
-        if (viewportGizmoContainer) {\r
-            viewportGizmoContainer.style.display = this.showGizmos ? 'block' : 'none';\r
-        }\r
-        \r
-        // Update button state\r
-        this.updateButtonStates();\r
-        \r
-    stLog('[SceneTopbarControls] Gizmos toggled:', this.showGizmos);\r
-    }\r
-    \r
-    updateButtonStates() {\r
-        // Update overlays button\r
-        if (this.overlaysButton) {\r
-            if (this.showOverlays) {\r
-                this.overlaysButton.classList.add('active');\r
-                // Apply inline styles as fallback\r
-                this.overlaysButton.style.background = 'rgba(76, 175, 80, 0.2)';\r
-                this.overlaysButton.style.borderColor = '#4CAF50';\r
-                this.overlaysButton.style.color = '#4CAF50';\r
-                this.overlaysButton.style.boxShadow = '0 0 0 1px #4CAF50';\r
-                stLog('[SceneTopbarControls] Overlays button set to active');\r
-            } else {\r
-                this.overlaysButton.classList.remove('active');\r
-                // Remove inline styles\r
-                this.overlaysButton.style.background = '';\r
-                this.overlaysButton.style.borderColor = '';\r
-                this.overlaysButton.style.color = '';\r
-                this.overlaysButton.style.boxShadow = '';\r
-                stLog('[SceneTopbarControls] Overlays button set to inactive');\r
-            }\r
-        }\r
-        \r
-        // Update gizmos button\r
-        if (this.gizmosButton) {\r
-            if (this.showGizmos) {\r
-                this.gizmosButton.classList.add('active');\r
-                // Apply inline styles as fallback\r
-                this.gizmosButton.style.background = 'rgba(76, 175, 80, 0.2)';\r
-                this.gizmosButton.style.borderColor = '#4CAF50';\r
-                this.gizmosButton.style.color = '#4CAF50';\r
-                this.gizmosButton.style.boxShadow = '0 0 0 1px #4CAF50';\r
-                stLog('[SceneTopbarControls] Gizmos button set to active, classes:', this.gizmosButton.className);\r
-            } else {\r
-                this.gizmosButton.classList.remove('active');\r
-                // Remove inline styles\r
-                this.gizmosButton.style.background = '';\r
-                this.gizmosButton.style.borderColor = '';\r
-                this.gizmosButton.style.color = '';\r
-                this.gizmosButton.style.boxShadow = '';\r
-                stLog('[SceneTopbarControls] Gizmos button set to inactive, classes:', this.gizmosButton.className);\r
-            }\r
-        }\r
-\r
-        // Update snap button\r
-        if (this.snapButton) {\r
-            if (this.snapEnabled) {\r
-                this.snapButton.classList.add('active');\r
-                this.snapButton.style.background = 'rgba(76, 175, 80, 0.2)';\r
-                this.snapButton.style.borderColor = '#4CAF50';\r
-                this.snapButton.style.color = '#4CAF50';\r
-                this.snapButton.style.boxShadow = '0 0 0 1px #4CAF50';\r
-            } else {\r
-                this.snapButton.classList.remove('active');\r
-                this.snapButton.style.background = '';\r
-                this.snapButton.style.borderColor = '';\r
-                this.snapButton.style.color = '';\r
-                this.snapButton.style.boxShadow = '';\r
-            }\r
-        }\r
-    }\r
-\r
-    toggleSnap() {\r
-        this.snapEnabled = !this.snapEnabled;\r
-\r
-        // Inform worker\r
-        if (window.worker) {\r
-            window.worker.postMessage({\r
-                type: 'SET_SNAP_ENABLED',\r
-                data: { enabled: this.snapEnabled }\r
-            });\r
-        }\r
-\r
-        this.updateButtonStates();\r
-    stLog('[SceneTopbarControls] Snap toggled:', this.snapEnabled);\r
-    }\r
-    \r
-    // Method to show/hide the entire controls wrapper\r
-    showControls() {\r
-        if (this.controlsWrapper) {\r
-            this.controlsWrapper.style.display = 'flex';\r
-        }\r
-    }\r
-    \r
-    hideControls() {\r
-        if (this.controlsWrapper) {\r
-            this.controlsWrapper.style.display = 'none';\r
-        }\r
-    }\r
-    \r
-    // Method to set custom content in the center container\r
-    setCenterContent(content) {\r
-        if (this.centerContainer) {\r
-            if (typeof content === 'string') {\r
-                this.centerContainer.innerHTML = content;\r
-            } else if (content instanceof HTMLElement) {\r
-                this.centerContainer.innerHTML = '';\r
-                this.centerContainer.appendChild(content);\r
-            }\r
-        }\r
-    }\r
-    \r
-    // Method to add buttons to left container\r
-    addLeftButton(button) {\r
-        if (this.leftContainer && button instanceof HTMLElement) {\r
-            this.leftContainer.appendChild(button);\r
-        }\r
-    }\r
-    \r
-    dispose() {\r
-        // Dispose stats overlay\r
-        if (this.statsOverlay) {\r
-            this.statsOverlay.dispose();\r
-            this.statsOverlay = null;\r
-        }\r
-        \r
-        // Clear references\r
-        this.container = null;\r
-        this.controlsWrapper = null;\r
-        this.leftContainer = null;\r
-        this.centerContainer = null;\r
-        this.rightContainer = null;\r
-        this.gizmosButton = null;\r
-        this.overlaysButton = null;\r
-        \r
-    stLog('[SceneTopbarControls] Disposed');\r
-    }\r
-}\r
-\r
-// Make it globally available\r
+        "sceneTopbarControls": `/* FILE: editor/z3d-object-editor/templates/scripts/components/scene-topbar-controls.js */
+/* Scene Topbar Controls - Manages the scene topbar buttons and functionality */
+
+// Logging (per-file toggle; errors always log)
+const DEBUG_SCENE_TOPBAR = false;
+const stLog = DEBUG_SCENE_TOPBAR ? console.log.bind(console) : () => {};
+const stWarn = DEBUG_SCENE_TOPBAR ? console.warn.bind(console) : () => {};
+const stError = console.error.bind(console);
+
+class SceneTopbarControls {
+    constructor() {
+        this.container = null;
+        this.statsOverlay = null;
+        this.gizmoController = null;
+        
+        // Toggle states
+        this.showOverlays = false;
+        this.showGizmos = true;
+    this.snapEnabled = false;
+        
+    stLog('[SceneTopbarControls] Created');
+    }
+    
+    initialize() {
+        // Find or create the scene topbar
+        this.container = document.querySelector('.scene-topbar');
+        
+        if (!this.container) {
+            stError('[SceneTopbarControls] Scene topbar not found');
+            return;
+        }
+        
+        // Ensure the topbar has proper styling for visibility and full width
+        this.container.style.zIndex = '1000';
+        this.container.style.position = 'absolute';
+        this.container.style.pointerEvents = 'auto';
+        this.container.style.top = '0';
+        this.container.style.left = '0';
+        this.container.style.right = '0';
+        this.container.style.width = '100%';
+        this.container.style.height = '36px';
+        this.container.style.background = 'rgba(37, 37, 37, 0.95)';
+        this.container.style.backdropFilter = 'blur(10px)';
+        this.container.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';
+        
+        // Restructure the topbar with three containers
+        this.restructureTopbar();
+        
+        // Initialize stats overlay
+        this.initializeStatsOverlay();
+        
+        // Setup button handlers
+        this.setupButtonHandlers();
+        
+        // Ensure initial states are correct
+        this.updateButtonStates();
+        
+    stLog('[SceneTopbarControls] Initialized with gizmos:', this.showGizmos, 'overlays:', this.showOverlays);
+    }
+    
+    restructureTopbar() {
+        // Clear existing content
+        this.container.innerHTML = '';
+        
+        // Check if we're in studio mode
+        const isStudioMode = window.StudioCoordinator !== undefined;
+        
+        // Create wrapper for all controls (can be hidden/shown as a group)
+        const controlsWrapper = document.createElement('div');
+        controlsWrapper.className = 'topbar-controls-wrapper';
+        controlsWrapper.style.width = '100%';
+        controlsWrapper.style.height = '100%';
+        controlsWrapper.style.display = 'flex';
+        controlsWrapper.style.alignItems = 'center';
+        controlsWrapper.style.justifyContent = 'space-between';
+        controlsWrapper.style.padding = '0 12px';
+        controlsWrapper.style.boxSizing = 'border-box';
+        
+        if (isStudioMode) {
+            // Studio layout with layout selector and object list in center
+            controlsWrapper.innerHTML = \`
+                <!-- Left Container -->
+                <div class="topbar-left" style="flex: 0 0 auto;">
+                    <!-- Future buttons go here -->
+                </div>
+                
+                <!-- Center Container - Studio controls -->
+                <div class="topbar-center" style="flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 12px;">
+                    <!-- Layout Selector -->
+                    <div class="layout-selector" id="layout-selector-container" style="display: flex; align-items: center; gap: 6px;">
+                        <!-- LayoutManager will populate this -->
+                    </div>
+                    
+                    <!-- Object List Toggle -->
+                    <button id="toggle-object-list" class="btn btn-sm topbar-btn" title="Toggle Object List">
+                        <span class="btn-icon">\u{1F4E6}</span>
+                        <span class="btn-text">Objects</span>
+                    </button>
+                </div>
+                
+                <!-- Right Container - Controls -->
+                <div class="topbar-right" style="flex: 0 0 auto; margin-left: auto; display: flex; gap: 4px;">
+                    <button id="toggle-snap" class="btn btn-sm topbar-btn" title="Toggle Snap (position/rotation)">
+                        <span class="btn-icon">\u{1F512}</span>
+                        <span class="btn-text">Snap</span>
+                    </button>
+                    <button id="toggle-gizmos" class="btn btn-sm topbar-btn active" title="Toggle Gizmos" style="margin-right: 4px;">
+                        <span class="btn-icon">\u{1F3AF}</span>
+                        <span class="btn-text">Gizmos</span>
+                    </button>
+                    <button id="toggle-overlays" class="btn btn-sm topbar-btn" title="Toggle Overlays">
+                        <span class="btn-icon">\u{1F4CA}</span>
+                        <span class="btn-text">Overlays</span>
+                    </button>
+                </div>
+            \`;
+        } else {
+            // Original z3d-object layout
+            controlsWrapper.innerHTML = \`
+                <!-- Left Container -->
+                <div class="topbar-left" style="flex: 0 0 auto;">
+                    <!-- Future buttons go here -->
+                </div>
+                
+                <!-- Center Container -->
+                <div class="topbar-center" style="flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <button id="toggle-snap" class="btn btn-sm topbar-btn" title="Toggle Snap (position/rotation)">
+                        <span class="btn-icon">\u{1F512}</span>
+                        <span class="btn-text">Snap</span>
+                    </button>
+                </div>
+                
+                <!-- Right Container -->
+                <div class="topbar-right" style="flex: 0 0 auto; margin-left: auto; display: flex; gap: 4px;">
+                    <button id="toggle-gizmos" class="btn btn-sm topbar-btn active" title="Toggle Gizmos" style="margin-right: 4px;">
+                        <span class="btn-icon">\u{1F3AF}</span>
+                        <span class="btn-text">Gizmos</span>
+                    </button>
+                    <button id="toggle-overlays" class="btn btn-sm topbar-btn" title="Toggle Overlays">
+                        <span class="btn-icon">\u{1F4CA}</span>
+                        <span class="btn-text">Overlays</span>
+                    </button>
+                </div>
+            \`;
+        }
+        
+        this.container.appendChild(controlsWrapper);
+        
+        // Cache references
+        this.controlsWrapper = controlsWrapper;
+        this.leftContainer = controlsWrapper.querySelector('.topbar-left');
+        this.centerContainer = controlsWrapper.querySelector('.topbar-center');
+        this.rightContainer = controlsWrapper.querySelector('.topbar-right');
+        
+        // Cache button references
+        this.gizmosButton = document.getElementById('toggle-gizmos');
+        this.overlaysButton = document.getElementById('toggle-overlays');
+        this.snapButton = document.getElementById('toggle-snap');
+        
+        // Studio-specific button
+        if (isStudioMode) {
+            this.objectListButton = document.getElementById('toggle-object-list');
+        }
+        
+        // Set initial button states
+        this.updateButtonStates();
+    }
+    
+    initializeStatsOverlay() {
+        // Create and initialize the stats overlay
+        if (!window.StatsOverlay) {
+            stWarn('[SceneTopbarControls] StatsOverlay class not available');
+            return;
+        }
+        
+        this.statsOverlay = new StatsOverlay();
+        this.statsOverlay.initialize();
+    }
+    
+    setupButtonHandlers() {
+        // Toggle Overlays button
+        if (this.overlaysButton) {
+            this.overlaysButton.addEventListener('click', (e) => {
+                this.handleButtonClick(e.currentTarget);
+                this.toggleOverlays();
+            });
+        }
+        
+        // Toggle Gizmos button
+        if (this.gizmosButton) {
+            this.gizmosButton.addEventListener('click', (e) => {
+                this.handleButtonClick(e.currentTarget);
+                this.toggleGizmos();
+            });
+        }
+
+        // Toggle Snap button
+        if (this.snapButton) {
+            this.snapButton.addEventListener('click', (e) => {
+                this.handleButtonClick(e.currentTarget);
+                this.toggleSnap();
+            });
+        }
+        
+        // Studio-specific: Toggle Object List button
+        if (this.objectListButton) {
+            this.objectListButton.addEventListener('click', (e) => {
+                this.handleButtonClick(e.currentTarget);
+                this.toggleObjectList();
+            });
+        }
+    }
+    
+    handleButtonClick(button) {
+        // Add clicked class for animation
+        button.classList.add('clicked');
+        
+        // Force button to lose focus
+        button.blur();
+        
+        // Remove the class after animation completes
+        setTimeout(() => {
+            button.classList.remove('clicked');
+        }, 300);
+    }
+    
+    toggleOverlays() {
+        this.showOverlays = !this.showOverlays;
+        
+        // Toggle stats overlay
+        if (this.statsOverlay) {
+            if (this.showOverlays) {
+                this.statsOverlay.show();
+            } else {
+                this.statsOverlay.hide();
+            }
+        }
+        
+        // Update button state
+        this.updateButtonStates();
+        
+    stLog('[SceneTopbarControls] Overlays toggled:', this.showOverlays);
+    }
+    
+    toggleGizmos() {
+        this.showGizmos = !this.showGizmos;
+        
+        // Send message to worker to toggle transform gizmo
+        if (window.worker) {
+            window.worker.postMessage({
+                type: 'TOGGLE_GIZMOS',
+                data: { visible: this.showGizmos }
+            });
+        }
+        
+        // Toggle viewport buttons visibility
+        if (window.viewportButtons) {
+            window.viewportButtons.setVisible(this.showGizmos);
+        }
+        
+        // Toggle viewport gizmo
+        const viewportGizmoContainer = document.getElementById('viewport-gizmo-container');
+        if (viewportGizmoContainer) {
+            viewportGizmoContainer.style.display = this.showGizmos ? 'block' : 'none';
+        }
+        
+        // Update button state
+        this.updateButtonStates();
+        
+    stLog('[SceneTopbarControls] Gizmos toggled:', this.showGizmos);
+    }
+    
+    updateButtonStates() {
+        // Update overlays button
+        if (this.overlaysButton) {
+            if (this.showOverlays) {
+                this.overlaysButton.classList.add('active');
+                // Apply inline styles as fallback
+                this.overlaysButton.style.background = 'rgba(76, 175, 80, 0.2)';
+                this.overlaysButton.style.borderColor = '#4CAF50';
+                this.overlaysButton.style.color = '#4CAF50';
+                this.overlaysButton.style.boxShadow = '0 0 0 1px #4CAF50';
+                stLog('[SceneTopbarControls] Overlays button set to active');
+            } else {
+                this.overlaysButton.classList.remove('active');
+                // Remove inline styles
+                this.overlaysButton.style.background = '';
+                this.overlaysButton.style.borderColor = '';
+                this.overlaysButton.style.color = '';
+                this.overlaysButton.style.boxShadow = '';
+                stLog('[SceneTopbarControls] Overlays button set to inactive');
+            }
+        }
+        
+        // Update gizmos button
+        if (this.gizmosButton) {
+            if (this.showGizmos) {
+                this.gizmosButton.classList.add('active');
+                // Apply inline styles as fallback
+                this.gizmosButton.style.background = 'rgba(76, 175, 80, 0.2)';
+                this.gizmosButton.style.borderColor = '#4CAF50';
+                this.gizmosButton.style.color = '#4CAF50';
+                this.gizmosButton.style.boxShadow = '0 0 0 1px #4CAF50';
+                stLog('[SceneTopbarControls] Gizmos button set to active, classes:', this.gizmosButton.className);
+            } else {
+                this.gizmosButton.classList.remove('active');
+                // Remove inline styles
+                this.gizmosButton.style.background = '';
+                this.gizmosButton.style.borderColor = '';
+                this.gizmosButton.style.color = '';
+                this.gizmosButton.style.boxShadow = '';
+                stLog('[SceneTopbarControls] Gizmos button set to inactive, classes:', this.gizmosButton.className);
+            }
+        }
+
+        // Update snap button
+        if (this.snapButton) {
+            if (this.snapEnabled) {
+                this.snapButton.classList.add('active');
+                this.snapButton.style.background = 'rgba(76, 175, 80, 0.2)';
+                this.snapButton.style.borderColor = '#4CAF50';
+                this.snapButton.style.color = '#4CAF50';
+                this.snapButton.style.boxShadow = '0 0 0 1px #4CAF50';
+            } else {
+                this.snapButton.classList.remove('active');
+                this.snapButton.style.background = '';
+                this.snapButton.style.borderColor = '';
+                this.snapButton.style.color = '';
+                this.snapButton.style.boxShadow = '';
+            }
+        }
+    }
+
+    toggleSnap() {
+        this.snapEnabled = !this.snapEnabled;
+
+        // Inform worker
+        if (window.worker) {
+            window.worker.postMessage({
+                type: 'SET_SNAP_ENABLED',
+                data: { enabled: this.snapEnabled }
+            });
+        }
+
+        this.updateButtonStates();
+    stLog('[SceneTopbarControls] Snap toggled:', this.snapEnabled);
+    }
+    
+    // Method to show/hide the entire controls wrapper
+    showControls() {
+        if (this.controlsWrapper) {
+            this.controlsWrapper.style.display = 'flex';
+        }
+    }
+    
+    hideControls() {
+        if (this.controlsWrapper) {
+            this.controlsWrapper.style.display = 'none';
+        }
+    }
+    
+    // Method to set custom content in the center container
+    setCenterContent(content) {
+        if (this.centerContainer) {
+            if (typeof content === 'string') {
+                this.centerContainer.innerHTML = content;
+            } else if (content instanceof HTMLElement) {
+                this.centerContainer.innerHTML = '';
+                this.centerContainer.appendChild(content);
+            }
+        }
+    }
+    
+    // Method to add buttons to left container
+    addLeftButton(button) {
+        if (this.leftContainer && button instanceof HTMLElement) {
+            this.leftContainer.appendChild(button);
+        }
+    }
+    
+    dispose() {
+        // Dispose stats overlay
+        if (this.statsOverlay) {
+            this.statsOverlay.dispose();
+            this.statsOverlay = null;
+        }
+        
+        // Clear references
+        this.container = null;
+        this.controlsWrapper = null;
+        this.leftContainer = null;
+        this.centerContainer = null;
+        this.rightContainer = null;
+        this.gizmosButton = null;
+        this.overlaysButton = null;
+        
+    stLog('[SceneTopbarControls] Disposed');
+    }
+}
+
+// Make it globally available
 window.SceneTopbarControls = SceneTopbarControls;`,
         "viewportButtons": "/* FILE: templates/scripts/components/viewport-buttons.js */\r\n/* Viewport action buttons - circular buttons for camera controls */\r\n\r\n// Logging (per-file toggle; errors always log)\r\nconst DEBUG_VIEWPORT_BUTTONS = false;\r\nconst vbLog = DEBUG_VIEWPORT_BUTTONS ? console.log.bind(console) : () => {};\r\nconst vbWarn = DEBUG_VIEWPORT_BUTTONS ? console.warn.bind(console) : () => {};\r\nconst vbError = console.error.bind(console);\r\n\r\nclass ViewportButtons {\r\n    constructor() {\r\n        this.container = null;\r\n        this.buttons = {};\r\n        this.isVisible = true;\r\n        this.worker = null;\r\n    // Padding multiplier for framing (distance buffer around the object)\r\n    this.focusPadding = 1.75; // increase as requested; can be overridden via window.Z3D_FOCUS_PADDING\r\n    }\r\n    \r\n    initialize(worker) {\r\n        this.worker = worker;\r\n        this.createContainer();\r\n        this.createButtons();\r\n        this.setupEventListeners();\r\n        \r\n        // Start visible (will be controlled by gizmos toggle)\r\n        this.setVisible(true);\r\n        \r\n    vbLog('[ViewportButtons] Initialized');\r\n    }\r\n    \r\n    createContainer() {\r\n        // Create container for circular buttons\r\n        this.container = document.createElement('div');\r\n        this.container.className = 'viewport-buttons-container';\r\n        this.container.style.cssText = `\r\n            position: absolute;\r\n            top: 260px;  /* Below viewport gizmo */\r\n            right: 10px;\r\n            width: 48px;\r\n            display: flex;\r\n            flex-direction: column;\r\n            gap: 10px;\r\n            z-index: 85;\r\n            pointer-events: auto;\r\n        `;\r\n        \r\n        // Add to viewport area\r\n        const viewportArea = document.getElementById('viewport-area');\r\n        if (viewportArea) {\r\n            viewportArea.appendChild(this.container);\r\n        }\r\n    }\r\n    \r\n    createButtons() {\r\n        // Create focus/refocus button\r\n        const focusButton = this.createButton({\r\n            id: 'focus-camera',\r\n            icon: '\u{1F50D}',  // Alternative: \u{1F3AF}, \u{1F441}\uFE0F, or we can use SVG\r\n            tooltip: 'Focus on Model',\r\n            onClick: () => this.handleFocusCamera()\r\n        });\r\n        \r\n        this.buttons.focus = focusButton;\r\n        this.container.appendChild(focusButton);\r\n    }\r\n    \r\n    createButton(config) {\r\n        const button = document.createElement('button');\r\n        button.id = config.id;\r\n        button.className = 'viewport-button';\r\n        button.title = config.tooltip;\r\n        button.innerHTML = `<span class=\"button-icon\">${config.icon}</span>`;\r\n        \r\n        // Style the button\r\n        button.style.cssText = `\r\n            width: 48px;\r\n            height: 48px;\r\n            border-radius: 50%;\r\n            background: rgba(37, 37, 37, 0.9);\r\n            backdrop-filter: blur(10px);\r\n            border: 1px solid rgba(255, 255, 255, 0.1);\r\n            color: rgba(255, 255, 255, 0.7);\r\n            font-size: 20px;\r\n            cursor: pointer;\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            transition: all 0.2s ease;\r\n            outline: none;\r\n            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);\r\n            pointer-events: auto;\r\n        `;\r\n        \r\n        // Add hover effects\r\n        button.addEventListener('mouseenter', () => {\r\n            button.style.background = 'rgba(37, 37, 37, 0.95)';\r\n            button.style.borderColor = 'rgba(255, 255, 255, 0.2)';\r\n            button.style.color = 'rgba(255, 255, 255, 0.9)';\r\n            button.style.transform = 'scale(1.05)';\r\n        });\r\n        \r\n        button.addEventListener('mouseleave', () => {\r\n            button.style.background = 'rgba(37, 37, 37, 0.9)';\r\n            button.style.borderColor = 'rgba(255, 255, 255, 0.1)';\r\n            button.style.color = 'rgba(255, 255, 255, 0.7)';\r\n            button.style.transform = 'scale(1)';\r\n        });\r\n        \r\n        button.addEventListener('mousedown', () => {\r\n            button.style.transform = 'scale(0.95)';\r\n        });\r\n        \r\n        button.addEventListener('mouseup', () => {\r\n            button.style.transform = 'scale(1)';\r\n        });\r\n        \r\n        if (config.onClick) {\r\n            button.addEventListener('click', config.onClick);\r\n        }\r\n        \r\n        return button;\r\n    }\r\n    \r\n    handleFocusCamera() {\r\n    vbLog('[ViewportButtons] Focus camera on model');\r\n        \r\n        // Get camera and controls\r\n        const camera = window.camera;\r\n        const controls = window.orbitControls;\r\n        \r\n        if (!camera || !controls) {\r\n            vbWarn('[ViewportButtons] Camera or controls not available');\r\n            return;\r\n        }\r\n        \r\n        // Send message to worker to get model bounds\r\n        if (this.worker) {\r\n            this.worker.postMessage({\r\n                type: 'GET_MODEL_BOUNDS'\r\n            });\r\n        }\r\n        \r\n        // Wait for MODEL_BOUNDS to arrive; refocus occurs in onmessage handler\r\n    }\r\n    \r\n    refocusCamera() {\r\n        const camera = window.camera;\r\n        const controls = window.orbitControls;\r\n        \r\n        if (!camera || !controls) return;\r\n        \r\n        // Determine target center (object origin) and radius for framing\r\n        let targetPosition = new THREE.Vector3(0, 0, 0);\r\n        let sphereRadius = 2;\r\n        let box = null;\r\n\r\n        if (window.currentModelBounds) {\r\n            box = window.currentModelBounds.box || window.currentModelBounds;\r\n            // Prefer origin from metadata if available\r\n            if (window.currentModelBounds.origin) {\r\n                targetPosition = new THREE.Vector3(\r\n                    window.currentModelBounds.origin.x,\r\n                    window.currentModelBounds.origin.y,\r\n                    window.currentModelBounds.origin.z\r\n                );\r\n            } else if (box && typeof box.getCenter === 'function') {\r\n                // Fallback: center of bounds\r\n                targetPosition = box.getCenter(new THREE.Vector3());\r\n            }\r\n\r\n            if (window.currentModelBounds.sphereRadius) {\r\n                sphereRadius = Math.max(1e-4, window.currentModelBounds.sphereRadius);\r\n            } else if (box && typeof box.getBoundingSphere === 'function') {\r\n                const sphere = box.getBoundingSphere(new THREE.Sphere());\r\n                sphereRadius = Math.max(1e-4, sphere.radius);\r\n            }\r\n        }\r\n\r\n        // Keep current view direction\r\n        const viewDirection = new THREE.Vector3();\r\n        camera.getWorldDirection(viewDirection);\r\n\r\n        // Compute distance to frame sphere using vertical and horizontal FOVs\r\n        const vFov = camera.fov * (Math.PI / 180);\r\n        const aspect = camera.aspect || 1;\r\n        const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);\r\n        const pad = (typeof window !== 'undefined' && typeof window.Z3D_FOCUS_PADDING === 'number')\r\n            ? window.Z3D_FOCUS_PADDING\r\n            : this.focusPadding; // padding factor\r\n        const distV = sphereRadius / Math.sin(vFov / 2);\r\n        const distH = sphereRadius / Math.sin(hFov / 2);\r\n        const distance = Math.max(distV, distH) * pad;\r\n\r\n        // New camera pos maintaining view direction\r\n        const newPosition = targetPosition.clone().sub(viewDirection.multiplyScalar(distance));\r\n        \r\n        // Animate camera to new position\r\n        if (window.gsap) {\r\n            // Smooth animation if GSAP is available\r\n            window.gsap.to(camera.position, {\r\n                duration: 0.8,\r\n                x: newPosition.x,\r\n                y: newPosition.y,\r\n                z: newPosition.z,\r\n                ease: \"power2.inOut\",\r\n                onUpdate: () => {\r\n                    controls.target.copy(targetPosition);\r\n                    controls.update();\r\n                }\r\n            });\r\n        } else {\r\n            // Direct update\r\n            camera.position.copy(newPosition);\r\n            controls.target.copy(targetPosition);\r\n            controls.update();\r\n        }\r\n        \r\n    vbLog('[ViewportButtons] Camera refocused on model');\r\n    }\r\n    \r\n    setupEventListeners() {\r\n        // Listen for worker messages\r\n        if (this.worker) {\r\n            const originalListener = this.worker.onmessage;\r\n            this.worker.onmessage = (event) => {\r\n                if (originalListener) originalListener(event);\r\n                \r\n                const { type, data } = event.data;\r\n                \r\n                if (type === 'MODEL_BOUNDS') {\r\n                    // Store bounds and metadata for refocus calculation\r\n                    const box = new THREE.Box3(\r\n                        new THREE.Vector3(data.min.x, data.min.y, data.min.z),\r\n                        new THREE.Vector3(data.max.x, data.max.y, data.max.z)\r\n                    );\r\n                    window.currentModelBounds = {\r\n                        box,\r\n                        center: data.center ? { ...data.center } : undefined,\r\n                        sphereRadius: data.sphereRadius,\r\n                        origin: data.origin ? { ...data.origin } : undefined\r\n                    };\r\n\r\n                    // Now refocus with correct bounds\r\n                    this.refocusCamera();\r\n                }\r\n            };\r\n        }\r\n    }\r\n    \r\n    setVisible(visible) {\r\n        this.isVisible = visible;\r\n        if (this.container) {\r\n            this.container.style.display = visible ? 'flex' : 'none';\r\n        }\r\n    }\r\n    \r\n    dispose() {\r\n        if (this.container && this.container.parentNode) {\r\n            this.container.parentNode.removeChild(this.container);\r\n        }\r\n        this.container = null;\r\n        this.buttons = {};\r\n    }\r\n}\r\n\r\n// Make the class globally available\r\nwindow.ViewportButtons = ViewportButtons;\r\n\r\n// Note: Instance will be created by gizmo-controller.js when ready"
       },
@@ -7318,7 +7379,7 @@ if (document.readyState === "loading") {\r
   console.log("[Z3DObjectEditor] Asset sizes:", {
     html: "8KB",
     styles: "66KB",
-    scripts: "615KB",
+    scripts: "617KB",
     config: "1KB"
   });
   var TemplateBuilder = class {
@@ -7353,9 +7414,9 @@ if (document.readyState === "loading") {\r
         const sizeKB = Math.round(html.length / 1024);
         console.log(`[Z3DObjectEditor] \u2705 Template built successfully (${sizeKB}KB)`);
         return html;
-      } catch (error7) {
-        console.error("[Z3DObjectEditor] \u274C Build failed:", error7);
-        throw error7;
+      } catch (error8) {
+        console.error("[Z3DObjectEditor] \u274C Build failed:", error8);
+        throw error8;
       }
     }
     /**
@@ -7370,8 +7431,8 @@ if (document.readyState === "loading") {\r
           ThreeJSLoader.loadOrbitControls()
         ]);
         return { threeJs, gltfLoader, orbitControls };
-      } catch (error7) {
-        console.warn("[Z3DObjectEditor] ThreeJSLoader not available:", error7);
+      } catch (error8) {
+        console.warn("[Z3DObjectEditor] ThreeJSLoader not available:", error8);
         return { threeJs: "", gltfLoader: "", orbitControls: "" };
       }
     }
@@ -8017,13 +8078,13 @@ self.postMessage({ type: 'WORKER_READY' });
             success: true
           }
         }, modelData ? [modelData] : void 0);
-      } catch (error7) {
+      } catch (error8) {
         this.sendMessage({
           type: "MODEL_DATA_RESPONSE",
           data: {
             modelPath,
             success: false,
-            error: error7 instanceof Error ? error7.message : "Unknown error"
+            error: error8 instanceof Error ? error8.message : "Unknown error"
           }
         });
       }
@@ -8124,7 +8185,7 @@ self.postMessage({ type: 'WORKER_READY' });
 
   // packages/z3d-object/src/c3runtime/transforms.ts
   var DEBUG_TRANSFORMS = false;
-  var THREE = () => globalThis.THREE;
+  var THREE2 = () => globalThis.THREE;
   function getPropertyValue(inst, name) {
     if (DEBUG_TRANSFORMS) {
       console.log(`%c[TRANSFORMS]%c getPropertyValue called for "${name}"`, "color:#a84;", "color:inherit");
@@ -8173,8 +8234,8 @@ self.postMessage({ type: 'WORKER_READY' });
         return {};
       }
       return JSON.parse(z3dJson);
-    } catch (error7) {
-      console.warn("Failed to parse z3d-json:", error7);
+    } catch (error8) {
+      console.warn("Failed to parse z3d-json:", error8);
       return {};
     }
   }
@@ -8301,7 +8362,7 @@ self.postMessage({ type: 'WORKER_READY' });
     if (DEBUG_TRANSFORMS) {
       console.log(`%c[TRANSFORMS]%c createInstanceMatrix called for instance`, "color:#f84;font-weight:bold", "color:inherit", inst);
     }
-    const tempObj = new (THREE()).Object3D();
+    const tempObj = new (THREE2()).Object3D();
     applyInstanceTransform(tempObj, inst, mapping);
     const matrix = tempObj.matrixWorld.toArray(new Float32Array(16));
     if (DEBUG_TRANSFORMS) {
@@ -8315,10 +8376,10 @@ self.postMessage({ type: 'WORKER_READY' });
     return matrix;
   }
   function getWorldAABB(obj) {
-    return new (THREE()).Box3().setFromObject(obj);
+    return new (THREE2()).Box3().setFromObject(obj);
   }
   function setInstanceFootprint(inst, obj) {
-    const s = getWorldAABB(obj).getSize(new (THREE()).Vector3());
+    const s = getWorldAABB(obj).getSize(new (THREE2()).Vector3());
     if (s.x > 0 && s.y > 0) {
       if (typeof inst.setSize === "function") {
         inst.setSize(s.x, s.y);
@@ -8387,8 +8448,8 @@ self.postMessage({ type: 'WORKER_READY' });
         this._drawSubmeshes(renderer, bakedVertices, mesh);
         if (this._drawCount % 60 === 1) {
         }
-      } catch (error7) {
-        log2(uid, "\u274C Error in canvas draw:", error7);
+      } catch (error8) {
+        log2(uid, "\u274C Error in canvas draw:", error8);
         this._drawPlaceholder(renderer);
       }
     }
@@ -8446,8 +8507,8 @@ self.postMessage({ type: 'WORKER_READY' });
           if (this._drawCount % 120 === 1) {
             log2(uid, `Drew submesh ${i}: type=${submesh.type}, vertices=${vertices.length / 3}, indices=${submesh.idx.length}`);
           }
-        } catch (error7) {
-          log2(uid, `Failed to draw submesh ${i}:`, error7);
+        } catch (error8) {
+          log2(uid, `Failed to draw submesh ${i}:`, error8);
           try {
             renderer.SetColorFillMode();
             renderer.SetColorRgba(0.9, 0.2, 0.2, 1);
@@ -8478,8 +8539,8 @@ self.postMessage({ type: 'WORKER_READY' });
         const matrixArray = new Float32Array(16);
         matrix.toArray(matrixArray);
         return bakeVerticesWithYFlip(mesh.pos, matrixArray);
-      } catch (error7) {
-        log2(uid, "Vertex baking failed:", error7);
+      } catch (error8) {
+        log2(uid, "Vertex baking failed:", error8);
         return new Float32Array(mesh.pos);
       }
     }
@@ -8564,15 +8625,15 @@ self.postMessage({ type: 'WORKER_READY' });
                   log2(uid, `Converted submesh ${i} to color mode as fallback`);
                 }
               }
-            } catch (error7) {
-              log2(uid, `\u274C Texture upload error for submesh ${i}:`, error7);
+            } catch (error8) {
+              log2(uid, `\u274C Texture upload error for submesh ${i}:`, error8);
               submesh.type = "color";
               submesh.color = [0.8, 0.8, 0.8, 1];
             }
           }
         }
-      } catch (error7) {
-        log2(uid, "\u274C Texture upload process failed:", error7);
+      } catch (error8) {
+        log2(uid, "\u274C Texture upload process failed:", error8);
       }
     }
     _updateMixer() {
@@ -8581,9 +8642,9 @@ self.postMessage({ type: 'WORKER_READY' });
         try {
           const deltaTime = 1 / 60;
           mixer.update(deltaTime);
-        } catch (error7) {
+        } catch (error8) {
           const uid = this._instance.inst.GetUID();
-          log2(uid, "Mixer update failed:", error7);
+          log2(uid, "Mixer update failed:", error8);
         }
       }
     }
@@ -8622,8 +8683,8 @@ self.postMessage({ type: 'WORKER_READY' });
         if (this._drawCount % 60 === 1) {
           log2(uid, `Drew placeholder: ${left}, ${top} to ${right}, ${bottom}`);
         }
-      } catch (error7) {
-        log2(uid, "Placeholder drawing failed:", error7);
+      } catch (error8) {
+        log2(uid, "Placeholder drawing failed:", error8);
       }
     }
     markDirty() {
@@ -8637,12 +8698,631 @@ self.postMessage({ type: 'WORKER_READY' });
     }
   };
 
+  // packages/z3d-object/src/editor/rendering/html-renderer.ts
+  var HTMLLayerRenderer = class {
+    constructor(_instance, _type) {
+      this._instance = _instance;
+      this._type = _type;
+      this._scene = null;
+      this._camera = null;
+      this._renderer = null;
+      this._controls = null;
+      // OrbitControls
+      this._htmlLayer = null;
+    }
+    draw() {
+      if (!this._setupRenderer()) {
+        return;
+      }
+      const object3d = this._instance.object3d;
+      if (!object3d) {
+        return;
+      }
+      try {
+        const mapping = this._instance.propertyMapping;
+        const mpName = mapping?.modelPath || "model-path";
+        void this._instance.inst.GetPropertyValue(mpName);
+      } catch {
+      }
+      applyInstanceTransform(object3d, this._instance.inst);
+      this._controls?.update();
+      if (this._renderer && this._scene && this._camera) {
+        this._renderer.render(this._scene, this._camera);
+      }
+    }
+    _setupRenderer() {
+      if (this._renderer) {
+        return true;
+      }
+      this._htmlLayer = this._ensureHTMLLayer();
+      if (!this._htmlLayer) {
+        return false;
+      }
+      const canvas = this._createCanvas();
+      this._htmlLayer.appendChild(canvas);
+      const THREE3 = globalThis.THREE;
+      this._renderer = new THREE3.WebGLRenderer({
+        canvas,
+        alpha: true,
+        antialias: true
+      });
+      if (this._renderer) {
+        this._renderer.setPixelRatio(window.devicePixelRatio * 0.75);
+      }
+      this._setupScene();
+      this._setupCamera();
+      this._setupControls(canvas);
+      return true;
+    }
+    _ensureHTMLLayer() {
+      const layerIndex = this._instance.inst.GetLayer().GetIndex?.() ?? 0;
+      console.log(`HTML Layer index: ${layerIndex}`);
+      const document2 = globalThis.document;
+      let layerElement = document2.querySelector(`div[data-c3html-layer='${layerIndex}']`);
+      if (!layerElement) {
+        layerElement = document2.createElement("div");
+        layerElement.dataset.c3htmlLayer = `${layerIndex}`;
+        layerElement.style.position = "absolute";
+        layerElement.style.pointerEvents = "none";
+        layerElement.style.inset = "0";
+        document2.body.appendChild(layerElement);
+      }
+      return layerElement;
+    }
+    _createCanvas() {
+      const canvas = document.createElement("canvas");
+      canvas.className = "z3d-dom-preview";
+      canvas.style.position = "absolute";
+      canvas.style.top = "0";
+      canvas.style.left = "0";
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
+      return canvas;
+    }
+    _setupScene() {
+      const mesh = this._instance.mesh;
+      const THREE3 = globalThis.THREE;
+      if (mesh && !mesh.placeholder) {
+        this._scene = mesh.scene.clone(true);
+      } else {
+        this._scene = new THREE3.Scene();
+      }
+      if (this._scene) {
+        setInstanceFootprint(this._instance.inst, this._scene);
+      }
+    }
+    _setupCamera() {
+      const THREE3 = globalThis.THREE;
+      this._camera = new THREE3.PerspectiveCamera(45, 1, 0.1, 1e4);
+      if (this._camera) {
+        this._camera.position.set(0, 0, 500);
+      }
+    }
+    _setupControls(canvas) {
+      const THREE3 = globalThis.THREE;
+      if (THREE3.OrbitControls && this._camera) {
+        this._controls = new THREE3.OrbitControls(this._camera, canvas);
+        this._controls.enableDamping = true;
+        this._controls.dampingFactor = 0.05;
+      }
+    }
+    dispose() {
+      if (this._renderer) {
+        this._renderer.dispose();
+        this._renderer = null;
+      }
+      if (this._controls) {
+        this._controls.dispose();
+        this._controls = null;
+      }
+      if (this._htmlLayer) {
+        const canvas = this._htmlLayer.querySelector(".z3d-dom-preview");
+        if (canvas) {
+          this._htmlLayer.removeChild(canvas);
+        }
+      }
+      this._scene = null;
+      this._camera = null;
+      this._htmlLayer = null;
+    }
+  };
+
+  // packages/z3d-object/src/editor/rendering/texture-renderer.ts
+  var TAG2 = (uid) => `[TextureRenderer ${uid}]`;
+  var log3 = (uid, ...args) => console.log(TAG2(uid), ...args);
+  var _TextureRenderer = class _TextureRenderer {
+    // Increased for better quality
+    constructor(_instance, _type) {
+      this._instance = _instance;
+      this._type = _type;
+      this._offscreenCanvas = null;
+      this._imageBitmap = null;
+      this._c3Texture = null;
+      this._threeRenderer = null;
+      this._scene = null;
+      this._camera = null;
+      this._isInitialized = false;
+      this._drawCount = 0;
+    }
+    draw(renderer) {
+      const uid = this._instance.inst.GetUID();
+      this._drawCount++;
+      if (typeof OffscreenCanvas === "undefined") {
+        if (this._drawCount % 60 === 1) {
+          log3(uid, "OffscreenCanvas not supported");
+        }
+        return false;
+      }
+      const mesh = this._instance.mesh;
+      try {
+        const mapping = this._instance.propertyMapping;
+        const mpName = mapping?.modelPath || "model-path";
+        void this._instance.inst.GetPropertyValue(mpName);
+      } catch {
+      }
+      const object3d = this._instance.object3d;
+      if (!mesh || mesh.placeholder || !object3d) {
+        if (this._drawCount % 60 === 1) {
+          log3(uid, "No valid mesh/object3d available");
+        }
+        return false;
+      }
+      if (!this._initialize(renderer)) {
+        if (this._drawCount % 60 === 1) {
+          log3(uid, "Failed to initialize texture renderer");
+        }
+        return false;
+      }
+      try {
+        this._updateScene();
+        if (this._scene && this._scene.children.length > 0) {
+          applyInstanceTransform(this._scene.children[0], this._instance.inst);
+        }
+        this._renderToOffscreen();
+        this._transferToC3Texture(renderer);
+        this._drawTexturedQuad(renderer);
+        if (this._drawCount % 60 === 1) {
+          log3(uid, "\u2705 Texture render successful");
+        }
+        return true;
+      } catch (error8) {
+        if (this._drawCount % 60 === 1) {
+          log3(uid, "\u274C Texture render failed:", error8);
+        }
+        return false;
+      }
+    }
+    _initialize(renderer) {
+      if (this._isInitialized) {
+        return true;
+      }
+      const uid = this._instance.inst.GetUID();
+      try {
+        log3(uid, "Initializing texture renderer...");
+        this._offscreenCanvas = new OffscreenCanvas(
+          _TextureRenderer.TEXTURE_SIZE,
+          _TextureRenderer.TEXTURE_SIZE
+        );
+        this._c3Texture = renderer.CreateDynamicTexture(
+          _TextureRenderer.TEXTURE_SIZE,
+          _TextureRenderer.TEXTURE_SIZE,
+          {
+            mipMap: false,
+            sampling: "bilinear",
+            wrapX: "clamp-to-edge",
+            wrapY: "clamp-to-edge"
+          }
+        );
+        this._setupThreeRenderer();
+        this._setupCamera();
+        this._setupScene();
+        this._isInitialized = true;
+        log3(uid, "\u2705 Texture renderer initialized");
+        return true;
+      } catch (error8) {
+        log3(uid, "\u274C Failed to initialize texture renderer:", error8);
+        return false;
+      }
+    }
+    _setupThreeRenderer() {
+      if (!this._offscreenCanvas)
+        return;
+      const THREE3 = globalThis.THREE;
+      this._threeRenderer = new THREE3.WebGLRenderer({
+        canvas: this._offscreenCanvas,
+        antialias: true,
+        alpha: true,
+        preserveDrawingBuffer: true
+      });
+      this._threeRenderer.setSize(
+        _TextureRenderer.TEXTURE_SIZE,
+        _TextureRenderer.TEXTURE_SIZE,
+        false
+      );
+      this._threeRenderer.setPixelRatio(1);
+      this._threeRenderer.setClearColor(0, 0);
+      this._threeRenderer.shadowMap.enabled = true;
+      this._threeRenderer.shadowMap.type = THREE3.PCFSoftShadowMap;
+      const uid = this._instance.inst.GetUID();
+      log3(uid, "Three.js renderer configured");
+    }
+    _setupCamera() {
+      const THREE3 = globalThis.THREE;
+      this._camera = new THREE3.PerspectiveCamera(
+        45,
+        // FOV
+        1,
+        // Aspect ratio (square texture)
+        0.1,
+        // Near
+        1e4
+        // Far
+      );
+      this._camera.position.set(200, 200, 200);
+      this._camera.lookAt(0, 0, 0);
+      const uid = this._instance.inst.GetUID();
+      log3(uid, "Camera configured");
+    }
+    _setupScene() {
+      const THREE3 = globalThis.THREE;
+      this._scene = new THREE3.Scene();
+      this._scene.background = null;
+      this._addLighting();
+      const uid = this._instance.inst.GetUID();
+      log3(uid, "Scene configured with lighting");
+    }
+    _addLighting() {
+      if (!this._scene)
+        return;
+      const THREE3 = globalThis.THREE;
+      const ambientLight = new THREE3.AmbientLight(4210752, 0.6);
+      this._scene.add(ambientLight);
+      const directionalLight = new THREE3.DirectionalLight(16777215, 0.8);
+      directionalLight.position.set(100, 100, 50);
+      directionalLight.castShadow = true;
+      directionalLight.shadow.mapSize.width = 1024;
+      directionalLight.shadow.mapSize.height = 1024;
+      directionalLight.shadow.camera.near = 0.1;
+      directionalLight.shadow.camera.far = 1e3;
+      directionalLight.shadow.camera.left = -200;
+      directionalLight.shadow.camera.right = 200;
+      directionalLight.shadow.camera.top = 200;
+      directionalLight.shadow.camera.bottom = -200;
+      this._scene.add(directionalLight);
+      const fillLight = new THREE3.DirectionalLight(16777215, 0.3);
+      fillLight.position.set(-50, 50, -50);
+      this._scene.add(fillLight);
+      const topLight = new THREE3.DirectionalLight(16777215, 0.2);
+      topLight.position.set(0, 100, 0);
+      this._scene.add(topLight);
+    }
+    _updateScene() {
+      if (!this._scene)
+        return;
+      const mesh = this._instance.mesh;
+      if (!mesh || mesh.placeholder)
+        return;
+      const existingModels = this._scene.children.filter(
+        (child) => child.userData && child.userData.isModel
+      );
+      existingModels.forEach((model) => this._scene.remove(model));
+      try {
+        const modelClone = mesh.scene.clone(true);
+        modelClone.userData.isModel = true;
+        modelClone.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              if (Array.isArray(child.material)) {
+                child.material.forEach((mat) => {
+                  mat.transparent = false;
+                  mat.opacity = 1;
+                  mat.side = THREE.FrontSide;
+                });
+              } else {
+                child.material.transparent = false;
+                child.material.opacity = 1;
+                child.material.side = THREE.FrontSide;
+              }
+            }
+          }
+        });
+        this._centerModel(modelClone);
+        this._scene.add(modelClone);
+        const uid = this._instance.inst.GetUID();
+        if (this._drawCount % 60 === 1) {
+          log3(uid, "Scene updated with model");
+        }
+      } catch (error8) {
+        const uid = this._instance.inst.GetUID();
+        log3(uid, "Failed to update scene:", error8);
+      }
+    }
+    _centerModel(model) {
+      const THREE3 = globalThis.THREE;
+      const box = new THREE3.Box3().setFromObject(model);
+      const center = box.getCenter(new THREE3.Vector3());
+      const size = box.getSize(new THREE3.Vector3());
+      model.position.sub(center);
+      const maxDimension = Math.max(size.x, size.y, size.z);
+      if (maxDimension > 100) {
+        const scale = 100 / maxDimension;
+        model.scale.multiplyScalar(scale);
+      }
+      if (this._camera) {
+        const distance = Math.max(maxDimension * 2, 200);
+        this._camera.position.set(distance, distance, distance);
+        this._camera.lookAt(0, 0, 0);
+      }
+    }
+    _renderToOffscreen() {
+      if (!this._threeRenderer || !this._scene || !this._camera) {
+        return;
+      }
+      try {
+        this._threeRenderer.setSize(
+          _TextureRenderer.TEXTURE_SIZE,
+          _TextureRenderer.TEXTURE_SIZE,
+          false
+        );
+        this._threeRenderer.clear();
+        this._threeRenderer.render(this._scene, this._camera);
+      } catch (error8) {
+        const uid = this._instance.inst.GetUID();
+        log3(uid, "Offscreen render failed:", error8);
+      }
+    }
+    _transferToC3Texture(renderer) {
+      if (!this._offscreenCanvas || !this._c3Texture) {
+        return;
+      }
+      try {
+        this._imageBitmap = this._offscreenCanvas.transferToImageBitmap();
+        renderer.UpdateTexture(this._imageBitmap, this._c3Texture);
+        if (this._drawCount % 120 === 1) {
+          const uid = this._instance.inst.GetUID();
+          log3(uid, "Texture transfer successful");
+        }
+      } catch (error8) {
+        const uid = this._instance.inst.GetUID();
+        log3(uid, "Texture transfer failed:", error8);
+      }
+    }
+    _drawTexturedQuad(renderer) {
+      if (!this._c3Texture) {
+        return;
+      }
+      try {
+        renderer.SetTextureFillMode();
+        renderer.SetTexture(this._c3Texture);
+        renderer.SetColorRgba(1, 1, 1, 1);
+        renderer.SetAlphaBlend();
+        const x = this._instance.inst.GetX();
+        const y = this._instance.inst.GetY();
+        const width = this._instance.inst.GetWidth();
+        const height = this._instance.inst.GetHeight();
+        const quad = this._instance.inst.GetQuad?.();
+        if (quad) {
+          renderer.Quad(quad);
+        } else {
+          const halfWidth = width / 2;
+          const halfHeight = height / 2;
+          renderer.Rect2(
+            x - halfWidth,
+            y - halfHeight,
+            x + halfWidth,
+            y + halfHeight
+          );
+        }
+        if (this._drawCount % 120 === 1) {
+          const uid = this._instance.inst.GetUID();
+          log3(uid, "Textured quad drawn");
+        }
+      } catch (error8) {
+        const uid = this._instance.inst.GetUID();
+        log3(uid, "Quad drawing failed:", error8);
+      }
+    }
+    dispose() {
+      const uid = this._instance.inst.GetUID();
+      log3(uid, "Disposing texture renderer...");
+      if (this._threeRenderer) {
+        this._threeRenderer.dispose();
+        this._threeRenderer = null;
+      }
+      this._c3Texture = null;
+      this._offscreenCanvas = null;
+      this._imageBitmap = null;
+      this._scene = null;
+      this._camera = null;
+      this._isInitialized = false;
+      log3(uid, "Texture renderer disposed");
+    }
+  };
+  _TextureRenderer.TEXTURE_SIZE = 512;
+  var TextureRenderer = _TextureRenderer;
+
+  // packages/z3d-object/src/editor/rendering/renderer.ts
+  var DEBUG_INSTANCE_RENDERER = false;
+  var TAG3 = (uid) => `[InstanceRenderer ${uid}]`;
+  var log4 = DEBUG_INSTANCE_RENDERER ? (uid, ...args) => console.log(TAG3(uid), ...args) : () => {
+  };
+  var error2 = (uid, ...args) => console.error(TAG3(uid), ...args);
+  var InstanceRenderer = class {
+    constructor(_instance, _type) {
+      this._instance = _instance;
+      this._type = _type;
+      this._isDirty = true;
+      this._lastRenderMode = "";
+      this._drawCount = 0;
+      const uid = this._instance.inst.GetUID();
+      log4(uid, "Initializing InstanceRenderer...");
+      try {
+        this._canvasRenderer = new CanvasRenderer(this._instance, this._type);
+        log4(uid, "\u2705 CanvasRenderer initialized");
+        this._htmlLayerRenderer = new HTMLLayerRenderer(this._instance, this._type);
+        log4(uid, "\u2705 HTMLLayerRenderer initialized");
+        this._textureRenderer = new TextureRenderer(this._instance, this._type);
+        log4(uid, "\u2705 TextureRenderer initialized");
+        log4(uid, "All renderers initialized successfully");
+      } catch (err) {
+        error2(uid, "\u274C Error initializing renderers:", err);
+      }
+    }
+    /*────────────────── Main Rendering Entry Point ──────────────────*/
+    draw(renderer, drawParams) {
+      const uid = this._instance.inst.GetUID();
+      this._drawCount++;
+      const renderMode = this._determineRenderMode();
+      if (this._drawCount % 60 === 1) {
+        log4(uid, `=== DRAW CALL #${this._drawCount} ===`);
+        log4(uid, `Render mode: ${renderMode}`);
+        log4(uid, `Is dirty: ${this._isDirty}`);
+        log4(uid, `Last render mode: ${this._lastRenderMode}`);
+        this._debugMeshState();
+      }
+      try {
+        switch (renderMode) {
+          case "html-layer":
+            if (this._drawCount % 60 === 1) {
+              log4(uid, "Using HTML layer rendering...");
+            }
+            this._htmlLayerRenderer.draw();
+            break;
+          case "texture":
+            if (this._drawCount % 60 === 1) {
+              log4(uid, "Attempting texture rendering...");
+            }
+            if (this._textureRenderer.draw(renderer)) {
+              if (this._drawCount % 60 === 1) {
+                log4(uid, "\u2705 Texture rendering successful");
+              }
+              break;
+            }
+            if (this._drawCount % 60 === 1) {
+              log4(uid, "\u26A0\uFE0F Texture rendering failed, falling back to canvas");
+            }
+            this._canvasRenderer.draw(renderer);
+            break;
+          case "canvas":
+          default:
+            if (this._drawCount % 60 === 1) {
+              log4(uid, "Using canvas rendering (DrawMesh)...");
+            }
+            this._canvasRenderer.draw(renderer);
+            break;
+        }
+        this._lastRenderMode = renderMode;
+        this._isDirty = false;
+      } catch (error8) {
+        log4(uid, `\u274C Draw error in ${renderMode} mode:`, error8);
+        log4(uid, "Falling back to canvas renderer for error state...");
+        try {
+          this._canvasRenderer.draw(renderer);
+        } catch (fallbackError) {
+          log4(uid, "\u274C Even canvas renderer failed:", fallbackError);
+        }
+      }
+    }
+    /*────────────────── Render Mode Detection ──────────────────*/
+    _determineRenderMode() {
+      return "canvas";
+    }
+    _isHTMLLayer(layer) {
+      const isHtml = layer && typeof layer.GetName === "function" && layer.GetName().toLowerCase().includes("html");
+      if (this._drawCount % 120 === 1) {
+        const uid = this._instance.inst.GetUID();
+        log4(uid, `Layer check: ${layer?.GetName?.()} -> isHTML: ${isHtml}`);
+      }
+      return isHtml;
+    }
+    _shouldUseTextureMode() {
+      const uid = this._instance.inst.GetUID();
+      const mesh = this._instance.mesh;
+      if (!mesh || mesh.placeholder) {
+        return false;
+      }
+      const vertexCount = this._calculateVertexCount(mesh);
+      const shouldUse = vertexCount > 1e4;
+      if (this._drawCount % 120 === 1) {
+        log4(uid, `Texture mode check: vertexCount=${vertexCount}, shouldUse=${shouldUse} (threshold: 10000)`);
+      }
+      return shouldUse;
+    }
+    // Helper method to calculate vertex count from mesh data
+    _calculateVertexCount(mesh) {
+      if (!mesh.pos || !mesh.pos.length) {
+        return 0;
+      }
+      return mesh.pos.length / 3;
+    }
+    _debugMeshState() {
+      const uid = this._instance.inst.GetUID();
+      const mesh = this._instance.mesh;
+      const object3d = this._instance.object3d;
+      log4(uid, `=== MESH STATE ===`);
+      log4(uid, `  Mesh exists: ${!!mesh}`);
+      log4(uid, `  Mesh is placeholder: ${mesh?.placeholder || false}`);
+      log4(uid, `  Object3D exists: ${!!object3d}`);
+      let modelPathValue = "";
+      try {
+        const mapping = this._instance.propertyMapping;
+        const mpName = mapping?.modelPath || "model-path";
+        modelPathValue = `${this._instance.inst.GetPropertyValue(mpName) || ""}`;
+      } catch {
+      }
+      log4(uid, `  Model path: "${modelPathValue}"`);
+      if (mesh && !mesh.placeholder) {
+        const vertexCount = this._calculateVertexCount(mesh);
+        log4(uid, `  Vertex count: ${vertexCount}`);
+        log4(uid, `  Submesh count: ${mesh.sub?.length || 0}`);
+        log4(uid, `  Has positions: ${!!(mesh.pos && mesh.pos.length > 0)}`);
+        log4(uid, `  Has UVs: ${!!(mesh.uv && mesh.uv.length > 0)}`);
+        log4(uid, `  Scene children: ${mesh.scene?.children?.length || 0}`);
+      }
+      log4(uid, `==================`);
+    }
+    /*────────────────── State Management ──────────────────*/
+    markDirty() {
+      const uid = this._instance.inst.GetUID();
+      log4(uid, "Renderer marked dirty");
+      this._isDirty = true;
+      this._canvasRenderer.markDirty?.();
+    }
+    /*────────────────── Lifecycle Management ──────────────────*/
+    dispose() {
+      const uid = this._instance.inst.GetUID();
+      log4(uid, "Disposing renderers...");
+      this._canvasRenderer.dispose();
+      this._htmlLayerRenderer.dispose();
+      this._textureRenderer.dispose();
+      log4(uid, "All renderers disposed");
+    }
+    /*────────────────── Debug & Info ──────────────────*/
+    getRenderInfo() {
+      const mesh = this._instance.mesh;
+      const vertexCount = mesh ? this._calculateVertexCount(mesh) : 0;
+      return {
+        isDirty: this._isDirty,
+        lastRenderMode: this._lastRenderMode,
+        hasMesh: !!mesh && !mesh.placeholder,
+        vertexCount,
+        supportsOffscreen: typeof OffscreenCanvas !== "undefined",
+        drawCount: this._drawCount,
+        hasPositions: !!(mesh?.pos && mesh.pos.length > 0),
+        hasUVs: !!(mesh?.uv && mesh.uv.length > 0),
+        submeshCount: mesh?.sub?.length || 0
+      };
+    }
+  };
+
   // packages/z3d-object/src/editor/utils/file-fetcher.ts
   var DEBUG_FILE_FETCHER = false;
-  var TAG2 = (uid) => `[FileFetcher ${uid}]`;
-  var log3 = DEBUG_FILE_FETCHER ? (uid, ...args) => console.log(TAG2(uid), ...args) : () => {
+  var TAG4 = (uid) => `[FileFetcher ${uid}]`;
+  var log5 = DEBUG_FILE_FETCHER ? (uid, ...args) => console.log(TAG4(uid), ...args) : () => {
   };
-  var error2 = (uid, ...args) => console.error(TAG2(uid), ...args);
+  var error3 = (uid, ...args) => console.error(TAG4(uid), ...args);
   var FileFetcher = class {
     constructor(_instance) {
       this._instance = _instance;
@@ -8663,7 +9343,7 @@ self.postMessage({ type: 'WORKER_READY' });
         }
         return await this._fetchByHttp(path, uid);
       } catch (err) {
-        error2(uid, "Fetch failed \u274C", err);
+        error3(uid, "Fetch failed \u274C", err);
         throw err;
       }
     }
@@ -8674,12 +9354,12 @@ self.postMessage({ type: 'WORKER_READY' });
       try {
         const projectFile = project.GetProjectFileById?.(+path);
         if (projectFile) {
-          log3(uid, "Fetched project file by ID \u2705", path);
+          log5(uid, "Fetched project file by ID \u2705", path);
           const blob = await projectFile.GetBlob();
           return blob.arrayBuffer();
         }
-      } catch (error7) {
-        log3(uid, "Failed to fetch by project ID:", error7);
+      } catch (error8) {
+        log5(uid, "Failed to fetch by project ID:", error8);
       }
       return null;
     }
@@ -8690,12 +9370,12 @@ self.postMessage({ type: 'WORKER_READY' });
           projectFile = project.GetProjectFileByName?.(path);
         }
         if (projectFile) {
-          log3(uid, "Fetched project file by name \u2705", path);
+          log5(uid, "Fetched project file by name \u2705", path);
           const blob = await projectFile.GetBlob();
           return blob.arrayBuffer();
         }
-      } catch (error7) {
-        log3(uid, "Failed to fetch by project name:", error7);
+      } catch (error8) {
+        log5(uid, "Failed to fetch by project name:", error8);
       }
       return null;
     }
@@ -8705,10 +9385,10 @@ self.postMessage({ type: 'WORKER_READY' });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        log3(uid, "Fetched via HTTP \u2705", path);
+        log5(uid, "Fetched via HTTP \u2705", path);
         return response.arrayBuffer();
-      } catch (error7) {
-        log3(uid, "HTTP fetch failed:", error7);
+      } catch (error8) {
+        log5(uid, "HTTP fetch failed:", error8);
         throw new Error(`Failed to fetch file: ${path}`);
       }
     }
@@ -8716,11 +9396,11 @@ self.postMessage({ type: 'WORKER_READY' });
 
   // packages/z3d-object/src/editor/loaders/mesh-processor.ts
   var DEBUG_MESH_PROCESSOR = false;
-  var log4 = DEBUG_MESH_PROCESSOR ? console.log.bind(console) : () => {
+  var log6 = DEBUG_MESH_PROCESSOR ? console.log.bind(console) : () => {
   };
   var warn2 = DEBUG_MESH_PROCESSOR ? console.warn.bind(console) : () => {
   };
-  var error3 = console.error.bind(console);
+  var error4 = console.error.bind(console);
   var MeshProcessor = class {
     constructor() {
       this._modelPath = "";
@@ -8782,7 +9462,7 @@ self.postMessage({ type: 'WORKER_READY' });
       const geometry = meshNode.geometry;
       let positions;
       if (meshNode.isSkinnedMesh && meshNode.skeleton) {
-        log4(`Processing SkinnedMesh: ${meshNode.name}, applying skeleton pose`);
+        log6(`Processing SkinnedMesh: ${meshNode.name}, applying skeleton pose`);
         positions = this._extractSkinnedMeshPositions(meshNode);
       } else {
         const sourcePositions = geometry.attributes.position.array;
@@ -8797,7 +9477,7 @@ self.postMessage({ type: 'WORKER_READY' });
       if (geometry.attributes.uv && geometry.attributes.uv.array.length > 0) {
         uvs = new Float32Array(geometry.attributes.uv.array);
       } else {
-        log4("No UV coordinates found for mesh, generating planar mapping");
+        log6("No UV coordinates found for mesh, generating planar mapping");
         uvs = this._generatePlanarUVsForVertices(positions);
       }
       const indices = geometry.index ? Array.from(geometry.index.array) : this._generateSequentialIndices(geometry.attributes.position.count);
@@ -8836,7 +9516,7 @@ self.postMessage({ type: 'WORKER_READY' });
         uvs[uvIndex] = (x - minX) * scaleX;
         uvs[uvIndex + 1] = (y - minY) * scaleY;
       }
-      log4(`Generated ${vertexCount} UV coordinates using planar mapping`);
+      log6(`Generated ${vertexCount} UV coordinates using planar mapping`);
       return uvs;
     }
     // ✅ FIXED: Generate planar UVs for complete position array
@@ -8870,7 +9550,7 @@ self.postMessage({ type: 'WORKER_READY' });
     }
     _createSubmeshFromMaterial(indices, material, meshName) {
       if (material?.map?.image) {
-        log4("Creating textured submesh with material:", material.name || "unnamed", "from mesh:", meshName);
+        log6("Creating textured submesh with material:", material.name || "unnamed", "from mesh:", meshName);
         const textureCacheKey = `${this._modelPath}::${material.name || meshName || "tex"}`;
         return {
           idx: indices,
@@ -8889,9 +9569,9 @@ self.postMessage({ type: 'WORKER_READY' });
             material.color.b,
             material.opacity ?? 1
           ];
-          log4("Creating colored submesh with color:", color);
+          log6("Creating colored submesh with color:", color);
         } else {
-          log4("Creating default gray submesh");
+          log6("Creating default gray submesh");
         }
         return {
           idx: indices,
@@ -8937,8 +9617,8 @@ self.postMessage({ type: 'WORKER_READY' });
       return { min, max };
     }
     _extractSkinnedMeshPositions(skinnedMesh) {
-      const THREE2 = globalThis.THREE;
-      if (!THREE2) {
+      const THREE3 = globalThis.THREE;
+      if (!THREE3) {
         warn2("Three.js not available for skinned mesh processing");
         return this._extractStaticPositions(skinnedMesh.geometry);
       }
@@ -8952,9 +9632,9 @@ self.postMessage({ type: 'WORKER_READY' });
           warn2("No skinning attributes found, using static positions");
           return this._extractStaticPositions(geometry);
         }
-        log4(`Processing skinned mesh: ${skinnedMesh.name}`);
-        log4(`  Vertices: ${positions.length / 3}`);
-        log4(`  Bones: ${skeleton?.bones?.length || 0}`);
+        log6(`Processing skinned mesh: ${skinnedMesh.name}`);
+        log6(`  Vertices: ${positions.length / 3}`);
+        log6(`  Bones: ${skeleton?.bones?.length || 0}`);
         const outputPositions = new Float32Array(positions.length);
         for (let i = 0; i < positions.length; i += 3) {
           const x = positions[i];
@@ -8978,7 +9658,7 @@ self.postMessage({ type: 'WORKER_READY' });
           minZ = Math.min(minZ, outputPositions[i + 2]);
           maxZ = Math.max(maxZ, outputPositions[i + 2]);
         }
-        log4(`Skinned mesh bounds: X[${minX.toFixed(2)}, ${maxX.toFixed(2)}], Y[${minY.toFixed(2)}, ${maxY.toFixed(2)}], Z[${minZ.toFixed(2)}, ${maxZ.toFixed(2)}]`);
+        log6(`Skinned mesh bounds: X[${minX.toFixed(2)}, ${maxX.toFixed(2)}], Y[${minY.toFixed(2)}, ${maxY.toFixed(2)}], Z[${minZ.toFixed(2)}, ${maxZ.toFixed(2)}]`);
         const sizeX = maxX - minX;
         const sizeY = maxY - minY;
         const sizeZ = maxZ - minZ;
@@ -8988,7 +9668,7 @@ self.postMessage({ type: 'WORKER_READY' });
         }
         return outputPositions;
       } catch (err) {
-        error3("Error extracting skinned mesh positions:", err);
+        error4("Error extracting skinned mesh positions:", err);
         return this._extractStaticPositions(skinnedMesh.geometry);
       }
     }
@@ -9012,11 +9692,11 @@ self.postMessage({ type: 'WORKER_READY' });
 
   // packages/z3d-object/src/editor/loaders/texture-manager.ts
   var DEBUG_TEXTURE_MANAGER = false;
-  var log5 = DEBUG_TEXTURE_MANAGER ? console.log.bind(console) : () => {
+  var log7 = DEBUG_TEXTURE_MANAGER ? console.log.bind(console) : () => {
   };
   var warn3 = DEBUG_TEXTURE_MANAGER ? console.warn.bind(console) : () => {
   };
-  var error4 = console.error.bind(console);
+  var error5 = console.error.bind(console);
   var TextureManager = class {
     constructor(_type) {
       this._type = _type;
@@ -9026,13 +9706,13 @@ self.postMessage({ type: 'WORKER_READY' });
      * @param cacheKey - Optional key for caching (e.g., "modelPath::materialName")
      */
     uploadTexture(renderer, imageSource, cacheKey) {
-      log5("[TextureManager] Starting texture upload...");
+      log7("[TextureManager] Starting texture upload...");
       if (typeof cacheKey === "string") {
-        log5("[TextureManager] Cache key:", cacheKey);
+        log7("[TextureManager] Cache key:", cacheKey);
       }
-      log5("[TextureManager] Image source:", imageSource);
-      log5("[TextureManager] Image type:", typeof imageSource);
-      log5("[TextureManager] Image constructor:", imageSource.constructor.name);
+      log7("[TextureManager] Image source:", imageSource);
+      log7("[TextureManager] Image type:", typeof imageSource);
+      log7("[TextureManager] Image constructor:", imageSource.constructor.name);
       let cache = this._type.textureCaches.get(renderer);
       if (!cache) {
         cache = /* @__PURE__ */ new Map();
@@ -9045,17 +9725,17 @@ self.postMessage({ type: 'WORKER_READY' });
       let entry = cache.get(key);
       if (entry) {
         entry.ref++;
-        log5("[TextureManager] \u2705 Using cached texture");
+        log7("[TextureManager] \u2705 Using cached texture");
         return entry.tex;
       }
       try {
         const img = imageSource;
         const width = img.width || img.naturalWidth || 2;
         const height = img.height || img.naturalHeight || 2;
-        log5(`[TextureManager] Creating texture ${width}x${height}`);
+        log7(`[TextureManager] Creating texture ${width}x${height}`);
         if (img instanceof HTMLImageElement) {
           if (!img.complete || img.naturalWidth === 0) {
-            log5("[TextureManager] \u274C Image not fully loaded");
+            log7("[TextureManager] \u274C Image not fully loaded");
             return null;
           }
         }
@@ -9069,15 +9749,15 @@ self.postMessage({ type: 'WORKER_READY' });
           }
         );
         if (!tex) {
-          log5("[TextureManager] \u274C CreateDynamicTexture returned null");
+          log7("[TextureManager] \u274C CreateDynamicTexture returned null");
           return null;
         }
         renderer.UpdateTexture(img, tex);
         cache.set(key, { tex, ref: 1 });
-        log5("[TextureManager] \u2705 Successfully created and uploaded texture");
+        log7("[TextureManager] \u2705 Successfully created and uploaded texture");
         return tex;
       } catch (err) {
-        error4("[TextureManager] \u274C Texture creation failed:", err);
+        error5("[TextureManager] \u274C Texture creation failed:", err);
         return null;
       }
     }
@@ -9118,16 +9798,16 @@ self.postMessage({ type: 'WORKER_READY' });
 
   // packages/z3d-object/src/editor/loaders/mesh-loader.ts
   var DEBUG_MESH_LOADER = false;
-  var TAG3 = (uid) => `[MeshLoader ${uid}]`;
-  var log6 = DEBUG_MESH_LOADER ? (uid, ...args) => console.log(TAG3(uid), ...args) : () => {
+  var TAG5 = (uid) => `[MeshLoader ${uid}]`;
+  var log8 = DEBUG_MESH_LOADER ? (uid, ...args) => console.log(TAG5(uid), ...args) : () => {
   };
-  var error5 = (uid, ...args) => console.error(TAG3(uid), ...args);
+  var error6 = (uid, ...args) => console.error(TAG5(uid), ...args);
   function isThreeAnimationClip(obj) {
     return obj && typeof obj === "object" && "tracks" in obj && "uuid" in obj;
   }
   function createAnimationClipFromInfo(clipInfo) {
-    const THREE2 = globalThis.THREE;
-    const clip = new THREE2.AnimationClip(clipInfo.name, clipInfo.duration, []);
+    const THREE3 = globalThis.THREE;
+    const clip = new THREE3.AnimationClip(clipInfo.name, clipInfo.duration, []);
     return clip;
   }
   var MeshLoader = class {
@@ -9181,7 +9861,7 @@ self.postMessage({ type: 'WORKER_READY' });
         this._setupScene();
         return;
       }
-      log6(this._instance.inst.GetUID(), "Loading model:", url);
+      log8(this._instance.inst.GetUID(), "Loading model:", url);
       this._loading = this._loadGLTF(url).finally(() => {
         this._loading = null;
         this._instance.markDirty();
@@ -9211,16 +9891,16 @@ self.postMessage({ type: 'WORKER_READY' });
     }
     // Create placeholder model for editor
     createPlaceholderModel(options = {}) {
-      const THREE2 = globalThis.THREE;
-      const geometry = new THREE2.BoxGeometry(50, 50, 50);
-      const material = new THREE2.MeshStandardMaterial({
+      const THREE3 = globalThis.THREE;
+      const geometry = new THREE3.BoxGeometry(50, 50, 50);
+      const material = new THREE3.MeshStandardMaterial({
         color: 8947848,
         wireframe: options.wireframe || false
       });
-      const mesh = new THREE2.Mesh(geometry, material);
+      const mesh = new THREE3.Mesh(geometry, material);
       mesh.castShadow = options.castShadow ?? true;
       mesh.receiveShadow = options.receiveShadow ?? true;
-      const group = new THREE2.Group();
+      const group = new THREE3.Group();
       group.add(mesh);
       const meshData = {
         pos: new Float32Array(),
@@ -9255,34 +9935,34 @@ self.postMessage({ type: 'WORKER_READY' });
         const meshData = this._meshProcessor.flattenGLTF(gltf.scene, gltf.animations);
         const loadedModel = this._createLoadedModelFromMeshData(meshData, options);
         this._type.meshCache.set(url, meshData);
-        log6(this._instance.inst.GetUID(), "Model loaded for editor. BBox:", meshData.bbox);
+        log8(this._instance.inst.GetUID(), "Model loaded for editor. BBox:", meshData.bbox);
         return loadedModel;
-      } catch (error7) {
-        log6(this._instance.inst.GetUID(), "Failed to load model:", error7);
+      } catch (error8) {
+        log8(this._instance.inst.GetUID(), "Failed to load model:", error8);
         return this.createPlaceholderModel(options);
       }
     }
     // ✅ FIXED: Reconstruct model from serialized ModelInfo with proper animation handling
     _reconstructModelFromInfo(modelInfo, options) {
-      const THREE2 = globalThis.THREE;
+      const THREE3 = globalThis.THREE;
       if (!modelInfo.positions || !modelInfo.submeshes) {
         return this.createPlaceholderModel(options);
       }
       try {
-        const geometry = new THREE2.BufferGeometry();
-        geometry.setAttribute("position", new THREE2.Float32BufferAttribute(modelInfo.positions, 3));
+        const geometry = new THREE3.BufferGeometry();
+        geometry.setAttribute("position", new THREE3.Float32BufferAttribute(modelInfo.positions, 3));
         if (modelInfo.uvs && modelInfo.uvs.length > 0) {
-          geometry.setAttribute("uv", new THREE2.Float32BufferAttribute(modelInfo.uvs, 2));
+          geometry.setAttribute("uv", new THREE3.Float32BufferAttribute(modelInfo.uvs, 2));
         }
         geometry.computeVertexNormals();
         const materials = this._createMaterialsFromSubmeshes(modelInfo.submeshes, options);
         const meshes = this._createMeshesFromSubmeshes(modelInfo.submeshes, geometry, materials, options);
-        const group = new THREE2.Group();
+        const group = new THREE3.Group();
         meshes.forEach((mesh) => group.add(mesh));
         let mixer = null;
         const animations = [];
         if (options.enableAnimations && modelInfo.clips) {
-          mixer = new THREE2.AnimationMixer(group);
+          mixer = new THREE3.AnimationMixer(group);
           for (const clipInfo of modelInfo.clips) {
             if (isThreeAnimationClip(clipInfo)) {
               animations.push(clipInfo);
@@ -9312,25 +9992,25 @@ self.postMessage({ type: 'WORKER_READY' });
           meshData
         };
       } catch (err) {
-        error5(0, "Failed to reconstruct model:", err);
+        error6(0, "Failed to reconstruct model:", err);
         return this.createPlaceholderModel(options);
       }
     }
     _createMaterialsFromSubmeshes(submeshes, options) {
-      const THREE2 = globalThis.THREE;
+      const THREE3 = globalThis.THREE;
       const materials = [];
       for (const submesh of submeshes) {
         let material;
         if (submesh.type === "color" && submesh.color) {
-          const color = new THREE2.Color(submesh.color[0], submesh.color[1], submesh.color[2]);
-          material = new THREE2.MeshStandardMaterial({
+          const color = new THREE3.Color(submesh.color[0], submesh.color[1], submesh.color[2]);
+          material = new THREE3.MeshStandardMaterial({
             color,
             wireframe: options.wireframe || false,
             transparent: submesh.color[3] < 1,
             opacity: submesh.color[3]
           });
         } else {
-          material = new THREE2.MeshStandardMaterial({
+          material = new THREE3.MeshStandardMaterial({
             color: 13421772,
             wireframe: options.wireframe || false
           });
@@ -9340,13 +10020,13 @@ self.postMessage({ type: 'WORKER_READY' });
       return materials;
     }
     _createMeshesFromSubmeshes(submeshes, baseGeometry, materials, options) {
-      const THREE2 = globalThis.THREE;
+      const THREE3 = globalThis.THREE;
       const meshes = [];
       submeshes.forEach((submeshData, index) => {
         const submeshGeometry = baseGeometry.clone();
         submeshGeometry.setIndex(submeshData.indices);
-        const material = materials[index] || materials[0] || new THREE2.MeshStandardMaterial();
-        const mesh = new THREE2.Mesh(submeshGeometry, material);
+        const material = materials[index] || materials[0] || new THREE3.MeshStandardMaterial();
+        const mesh = new THREE3.Mesh(submeshGeometry, material);
         mesh.castShadow = options.castShadow ?? true;
         mesh.receiveShadow = options.receiveShadow ?? true;
         meshes.push(mesh);
@@ -9354,7 +10034,7 @@ self.postMessage({ type: 'WORKER_READY' });
       return meshes;
     }
     _createLoadedModelFromMeshData(meshData, options) {
-      const THREE2 = globalThis.THREE;
+      const THREE3 = globalThis.THREE;
       const object = meshData.scene.clone(true);
       this._applyOptionsToObject(object, options);
       const materials = [];
@@ -9369,7 +10049,7 @@ self.postMessage({ type: 'WORKER_READY' });
       });
       let mixer = null;
       if (options.enableAnimations && meshData.clips.length > 0) {
-        mixer = new THREE2.AnimationMixer(object);
+        mixer = new THREE3.AnimationMixer(object);
       }
       return {
         object,
@@ -9420,10 +10100,10 @@ self.postMessage({ type: 'WORKER_READY' });
       this._curAction = null;
     }
     _checkRequiredLibraries() {
-      const THREE2 = globalThis.THREE;
+      const THREE3 = globalThis.THREE;
       const GLTFLoader = globalThis.GLTFLoader;
-      if (!THREE2 || !GLTFLoader) {
-        log6(this._instance.inst.GetUID(), "Three.js or GLTFLoader not available");
+      if (!THREE3 || !GLTFLoader) {
+        log8(this._instance.inst.GetUID(), "Three.js or GLTFLoader not available");
         return false;
       }
       return true;
@@ -9435,10 +10115,10 @@ self.postMessage({ type: 'WORKER_READY' });
         this._mesh = this._meshProcessor.flattenGLTF(gltf.scene, gltf.animations, url);
         this._type.meshCache.set(url, this._mesh);
         this._setupScene();
-        log6(this._instance.inst.GetUID(), "Model loaded successfully. BBox:", this._mesh.bbox);
+        log8(this._instance.inst.GetUID(), "Model loaded successfully. BBox:", this._mesh.bbox);
         this._instance.markDirty();
-      } catch (error7) {
-        log6(this._instance.inst.GetUID(), "Failed to load model:", error7);
+      } catch (error8) {
+        log8(this._instance.inst.GetUID(), "Failed to load model:", error8);
         this._createPlaceholderMesh();
         this._instance.markDirty();
       }
@@ -9450,13 +10130,13 @@ self.postMessage({ type: 'WORKER_READY' });
       });
     }
     _createPlaceholderMesh() {
-      const THREE2 = globalThis.THREE;
+      const THREE3 = globalThis.THREE;
       this._mesh = {
         pos: new Float32Array(),
         uv: new Float32Array(),
         bbox: { min: [0, 0, 0], max: [0, 0, 0] },
         sub: [],
-        scene: new THREE2.Scene(),
+        scene: new THREE3.Scene(),
         clips: [],
         placeholder: true
       };
@@ -9464,14 +10144,14 @@ self.postMessage({ type: 'WORKER_READY' });
     _setupScene() {
       if (!this._mesh)
         return;
-      const THREE2 = globalThis.THREE;
+      const THREE3 = globalThis.THREE;
       this._object3d = this._mesh.scene.clone(true);
       this._setupAnimations();
       const mapping = this._instance.propertyMapping;
       applyInstanceTransform(this._object3d, this._instance.inst, mapping);
       setInstanceFootprint(this._instance.inst, this._object3d);
       try {
-        const size = getWorldAABB(this._object3d).getSize(new THREE2.Vector3());
+        const size = getWorldAABB(this._object3d).getSize(new THREE3.Vector3());
         if (size.x > 0 && size.y > 0) {
           this._instance.setOriginalSize(size.x, size.y);
         }
@@ -9482,8 +10162,8 @@ self.postMessage({ type: 'WORKER_READY' });
     _setupAnimations() {
       if (!this._object3d || !this._mesh?.clips.length)
         return;
-      const THREE2 = globalThis.THREE;
-      this._mixer = new THREE2.AnimationMixer(this._object3d);
+      const THREE3 = globalThis.THREE;
+      this._mixer = new THREE3.AnimationMixer(this._object3d);
       if (this._mixer && this._mesh.clips.length > 0) {
         this._curAction = this._mixer.clipAction(this._mesh.clips[0]).play();
       }
@@ -9517,11 +10197,11 @@ self.postMessage({ type: 'WORKER_READY' });
       };
     }
     cloneModel(model) {
-      const THREE2 = globalThis.THREE;
+      const THREE3 = globalThis.THREE;
       const clonedObject = model.object.clone();
       let clonedMixer = null;
       if (model.mixer && model.animations.length > 0) {
-        clonedMixer = new THREE2.AnimationMixer(clonedObject);
+        clonedMixer = new THREE3.AnimationMixer(clonedObject);
         model.animations.forEach((clip) => {
           clonedMixer.clipAction(clip);
         });
@@ -9566,13 +10246,36 @@ self.postMessage({ type: 'WORKER_READY' });
     }
   };
 
+  // packages/z3d-object/src/editor/types/config.ts
+  function createDefaultZ3DConfig() {
+    return {
+      object: {
+        transform: {
+          delta: {
+            position: { x: 0, y: 0, z: 0 },
+            rotation: { x: 0, y: 0, z: 0 },
+            scale: { x: 1, y: 1, z: 1 }
+          }
+        },
+        animation: {
+          currentAnimation: null,
+          currentTime: 0,
+          isPlaying: false,
+          isLooping: true,
+          playbackSpeed: 1
+        },
+        nodeVisibility: {}
+      }
+    };
+  }
+
   // packages/z3d-object/src/editor/index.ts
   var DEBUG_EDITOR = false;
-  var log7 = DEBUG_EDITOR ? console.log.bind(console) : () => {
+  var log9 = DEBUG_EDITOR ? console.log.bind(console) : () => {
   };
   var warn4 = DEBUG_EDITOR ? console.warn.bind(console) : () => {
   };
-  var error6 = console.error.bind(console);
+  var error7 = console.error.bind(console);
   var Z3DObjectEditor = class {
     constructor(host) {
       this._isOpen = false;
@@ -9590,7 +10293,7 @@ self.postMessage({ type: 'WORKER_READY' });
     }
     async openEditor(options = {}) {
       if (this._isOpen) {
-        log7("[Z3DObjectEditor] Editor already open");
+        log9("[Z3DObjectEditor] Editor already open");
         this.editorWindow.focus();
         return true;
       }
@@ -9606,7 +10309,7 @@ self.postMessage({ type: 'WORKER_READY' });
         }
         return success;
       } catch (err) {
-        error6("[Z3DObjectEditor] Failed to open editor:", err);
+        error7("[Z3DObjectEditor] Failed to open editor:", err);
         return false;
       }
     }
@@ -9627,7 +10330,7 @@ self.postMessage({ type: 'WORKER_READY' });
     }
     sendInitialState() {
       const state = this.propertyAdapter.getState();
-      log7("[Z3DObjectEditor] Sending initial state:", state);
+      log9("[Z3DObjectEditor] Sending initial state:", state);
       this.editorWindow.sendMessage({
         type: "INITIAL_STATE",
         data: state
@@ -9650,14 +10353,14 @@ self.postMessage({ type: 'WORKER_READY' });
       }
     }
     handleAnimationStateChange(data) {
-      log7("[Z3DObjectEditor] Handling animation state change:", data);
+      log9("[Z3DObjectEditor] Handling animation state change:", data);
       this.propertyAdapter.updateAnimationState(data);
       if (this.host.onPropertiesChanged) {
         this.host.onPropertiesChanged();
       }
     }
     handleNodeVisibilityChange(data) {
-      log7("[Z3DObjectEditor] Handling node visibility change:", data);
+      log9("[Z3DObjectEditor] Handling node visibility change:", data);
       if (data.nodeVisibility && typeof data.nodeVisibility === "object") {
         Object.entries(data.nodeVisibility).forEach(([nodeName, visible]) => {
           this.propertyAdapter.updateNodeVisibility(nodeName, visible);
@@ -9680,7 +10383,7 @@ self.postMessage({ type: 'WORKER_READY' });
     }
     updateState() {
       if (!this._isOpen || this._isInitializing || this._recentEditorUpdate) {
-        log7("[Z3DObjectEditor] updateState blocked:", {
+        log9("[Z3DObjectEditor] updateState blocked:", {
           isOpen: this._isOpen,
           isInitializing: this._isInitializing,
           recentEditorUpdate: this._recentEditorUpdate
@@ -9691,7 +10394,7 @@ self.postMessage({ type: 'WORKER_READY' });
       const stateHash = JSON.stringify(state);
       if (stateHash !== this._lastSyncHash) {
         this._lastSyncHash = stateHash;
-        log7("[Z3DObjectEditor] Sending state update to editor, position:", {
+        log9("[Z3DObjectEditor] Sending state update to editor, position:", {
           x: state.transform?.position?.x,
           y: state.transform?.position?.y,
           z: state.transform?.position?.z
@@ -9709,7 +10412,7 @@ self.postMessage({ type: 'WORKER_READY' });
       this._syncTimer = window.setInterval(() => {
         this._performSync();
       }, this._syncInterval);
-      log7("[Z3DObjectEditor] Property sync started");
+      log9("[Z3DObjectEditor] Property sync started");
     }
     _stopPropertySync() {
       this._isActive = false;
@@ -9721,11 +10424,11 @@ self.postMessage({ type: 'WORKER_READY' });
         clearTimeout(this._editorUpdateTimeout);
         this._editorUpdateTimeout = null;
       }
-      log7("[Z3DObjectEditor] Property sync stopped");
+      log9("[Z3DObjectEditor] Property sync stopped");
     }
     _performSync() {
       if (this._isInitializing || this._recentEditorUpdate || !this._isOpen) {
-        log7("[Z3DObjectEditor] Sync blocked:", {
+        log9("[Z3DObjectEditor] Sync blocked:", {
           isInitializing: this._isInitializing,
           recentEditorUpdate: this._recentEditorUpdate,
           isOpen: this._isOpen
@@ -9738,10 +10441,10 @@ self.postMessage({ type: 'WORKER_READY' });
       this._isInitializing = false;
       this._recentEditorUpdate = false;
       this._lastSyncHash = "";
-      log7("[Z3DObjectEditor] Initialization complete, sync enabled");
+      log9("[Z3DObjectEditor] Initialization complete, sync enabled");
     }
     onWindowClosed() {
-      log7("[Z3DObjectEditor] Editor window was closed");
+      log9("[Z3DObjectEditor] Editor window was closed");
       this._isOpen = false;
       this._stopPropertySync();
     }
@@ -9764,6 +10467,47 @@ self.postMessage({ type: 'WORKER_READY' });
     }
   };
   var editor_default = Z3DObjectEditor;
+  var threeJSLoadPromise = null;
+  async function initializeThreeJS() {
+    if (globalThis.THREE && globalThis.GLTFLoader) {
+      return true;
+    }
+    if (threeJSLoadPromise) {
+      return threeJSLoadPromise;
+    }
+    threeJSLoadPromise = loadThreeJSInternal();
+    return threeJSLoadPromise;
+  }
+  async function loadThreeJSInternal() {
+    try {
+      console.log("[Z3DPortable] Loading Three.js from embedded source using blob URLs...");
+      const threeSource = await ThreeJSLoader.loadThreeJS();
+      const threeBlob = new Blob([threeSource + "\nglobalThis.THREE = THREE;"], { type: "application/javascript" });
+      const threeUrl = URL.createObjectURL(threeBlob);
+      await loadScript(threeUrl);
+      URL.revokeObjectURL(threeUrl);
+      const gltfSource = await ThreeJSLoader.loadGLTFLoader();
+      const gltfBlob = new Blob([gltfSource + "\nglobalThis.GLTFLoader = GLTFLoaderModule.GLTFLoader;"], { type: "application/javascript" });
+      const gltfUrl = URL.createObjectURL(gltfBlob);
+      await loadScript(gltfUrl);
+      URL.revokeObjectURL(gltfUrl);
+      console.log("[Z3DPortable] Three.js and GLTFLoader loaded successfully");
+      return true;
+    } catch (error8) {
+      console.error("[Z3DPortable] Failed to load Three.js:", error8);
+      threeJSLoadPromise = null;
+      return false;
+    }
+  }
+  function loadScript(url) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = url;
+      script.onload = () => resolve();
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
   return __toCommonJS(editor_exports);
 })();
 
