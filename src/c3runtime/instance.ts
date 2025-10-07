@@ -387,18 +387,13 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 			return;
 		}
 		
-		console.log("[Rendera-Control] Attempting to register animation callback for instanceId:", this._currentModel.instanceId);
-		
 		// Register a single callback for all animation events
 		if (rendera.registerAnimationCallback)
 		{
-			console.log("[Rendera-Control] registerAnimationCallback method found, registering...");
 			rendera.registerAnimationCallback(this._currentModel.instanceId, (data: any) => {
-				console.log("[Rendera-Control] Animation callback received:", data);
 				// Check the event type to determine which trigger to fire
 				if (data.eventType === 'COMPLETE' || data.eventType === 'complete')
 				{
-					console.log("[Rendera-Control] Animation COMPLETE event, firing trigger for animation:", data.animationName);
 					// Store the animation name that finished
 					this._lastAnimationName = data.animationName || "";
 					// Clear current playing animation since it completed
@@ -408,7 +403,6 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 				}
 				else if (data.eventType === 'LOOP' || data.eventType === 'loop')
 				{
-					console.log("[Rendera-Control] Animation LOOP event, firing trigger for animation:", data.animationName);
 					// Store the animation name that looped
 					this._lastAnimationName = data.animationName || "";
 					// Fire the OnAnimationLoop trigger
@@ -416,7 +410,6 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 				}
 				else if (data.eventType === 'START' || data.eventType === 'start')
 				{
-					console.log("[Rendera-Control] Animation START event, firing trigger for animation:", data.animationName);
 					// Store the animation name that started
 					this._lastAnimationName = data.animationName || "";
 					// Fire the OnAnimationStart trigger
@@ -424,20 +417,14 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 				}
 				else if (data.eventType === 'STOP' || data.eventType === 'stop')
 				{
-					console.log("[Rendera-Control] Animation STOP event, firing trigger for animation:", data.animationName);
 					// Store the animation name that stopped
 					this._lastAnimationName = data.animationName || "";
 					// Fire the OnAnimationStop trigger
 					this._trigger(C3.Plugins.renderaController.Cnds.OnAnimationStop);
 				}
 			});
-			
+
 			this._animationCallbacksRegistered = true;
-			console.log("[Rendera-Control] Animation callback registered successfully");
-		}
-		else
-		{
-			console.log("[Rendera-Control] registerAnimationCallback method not found on rendera singleton");
 		}
 	}
 	
