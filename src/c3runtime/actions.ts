@@ -286,5 +286,33 @@ C3.Plugins.renderaController.Acts =
 				this._currentModel?.disableNode(nodeName);
 			});
 		}
+	},
+
+	SetMaterial(this: SDKInstanceClass, nodeName: string, materialIndex: number)
+	{
+		if (this._currentModel)
+		{
+			(this._currentModel as any).setMaterial(nodeName, materialIndex);
+		}
+		else
+		{
+			this._commandQueue.push(() => {
+				(this._currentModel as any)?.setMaterial(nodeName, materialIndex);
+			});
+		}
+	},
+
+	ResetMaterials(this: SDKInstanceClass)
+	{
+		if (this._currentModel)
+		{
+			(this._currentModel as any).resetMaterials();
+		}
+		else
+		{
+			this._commandQueue.push(() => {
+				(this._currentModel as any)?.resetMaterials();
+			});
+		}
 	}
 };

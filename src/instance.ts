@@ -156,7 +156,8 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
             InstanceRenderer,
             MeshLoader,
             TextureManager,
-            initializeThreeJS
+            initializeThreeJS,
+            setInstanceFootprint
         } = portable;
 
         if (!Z3DObjectEditor || !InstanceRenderer || !MeshLoader || !TextureManager) {
@@ -292,22 +293,27 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
                 this._loadModel(this._modelPath);
             }
         }
-        
+
+        // Update bounding box when scale changes
+        if (id === 'scale' || id === 'scale-x' || id === 'scale-y' || id === 'scale-z') {
+            this._updateBoundingBox();
+        }
+
         // Check for skinned mesh updates in z3d-json
         if (id === 'z3d-json') {
             this._handleSkinnedMeshUpdate();
         }
-        
+
         // Mark renderer dirty for any property change
         if (this._renderer) {
             this._renderer.markDirty();
         }
-        
+
         // Update editor if open
         if (this._editor && this._editor.isOpen()) {
             this._editor.updateState();
         }
-        
+
         this._scheduleForceRedraw();
     }
     
@@ -406,16 +412,32 @@ class RenderaControllerInstance extends SDK.IWorldInstanceBase {
     
     private _loadModel(path: string) {
         if (!this._loader) return;
-        
+
         log(`[RenderaController] Loading model: ${path}`);
         this._loader.loadModel(path || '').then(() => {
             log(`[RenderaController] Model loaded: ${path}`);
+            this._updateBoundingBox();
             this._scheduleForceRedraw();
         }).catch((err: any) => {
             error(`[RenderaController] Failed to load model: ${path}`, err);
         });
     }
-    
+
+    private _updateBoundingBox(): void {
+        // Update Construct 3 instance size based on loaded model and current scale
+        if (!this._loader || !this.object3d) return;
+
+        const portable = (globalThis as any).Z3DPortable;
+        if (!portable?.setInstanceFootprint) return;
+
+        try {
+            portable.setInstanceFootprint(this.inst, this.object3d);
+            log('[RenderaController] Updated bounding box');
+        } catch (err) {
+            error('[RenderaController] Failed to update bounding box:', err);
+        }
+    }
+
     private _handleSkinnedMeshUpdate(): void {
         try {
             const jsonStr = this.inst.GetPropertyValue("z3d-json") as string;

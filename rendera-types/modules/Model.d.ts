@@ -17,6 +17,8 @@ export declare class Model implements IModel {
     enableNode(nodeName: string): void;
     disableNode(nodeName: string): void;
     isNodeEnabled(nodeName: string): boolean;
+    setMaterial(nodeName: string, materialIndex: number): void;
+    resetMaterials(): void;
     get manager(): IInstanceManager;
 }
 //# sourceMappingURL=Model.d.ts.map

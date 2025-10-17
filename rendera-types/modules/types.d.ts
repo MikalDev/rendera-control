@@ -136,6 +136,8 @@ export interface IModel {
     enableNode(nodeName: string): void;
     disableNode(nodeName: string): void;
     isNodeEnabled(nodeName: string): boolean;
+    setMaterial(nodeName: string, materialIndex: number): void;
+    resetMaterials(): void;
 }
 export declare enum TextureType {
     BaseColor = 0,

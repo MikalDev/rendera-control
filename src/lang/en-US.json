@@ -304,6 +304,26 @@
 								"desc": "The name of the node to disable."
 							}
 						}
+					},
+					"set-material": {
+						"list-name": "Set material",
+						"display-text": "Set node [i]{0}[/i] to material index [i]{1}[/i]",
+						"description": "Override the material index for a specific node.",
+						"params": {
+							"node-name": {
+								"name": "Node name",
+								"desc": "The name of the node to apply the material override."
+							},
+							"material-index": {
+								"name": "Material index",
+								"desc": "The material index to use for this node."
+							}
+						}
+					},
+					"reset-materials": {
+						"list-name": "Reset materials",
+						"display-text": "Reset all material overrides",
+						"description": "Reset all material overrides to default values."
 					}
 				},
 				"expressions": {
