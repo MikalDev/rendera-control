@@ -44,5 +44,27 @@ export declare class Model implements IModel {
      */
     isNodeEnabled(nodeName: string): boolean;
     get manager(): IInstanceManager;
+    /**
+     * Sets the tint color for this model instance.
+     * @param r Red component (0-1)
+     * @param g Green component (0-1)
+     * @param b Blue component (0-1)
+     */
+    setTintColor(r: number, g: number, b: number): void;
+    /**
+     * Sets the opacity for this model instance.
+     * @param opacity Opacity value (0-1, where 0 is transparent and 1 is opaque)
+     */
+    setOpacity(opacity: number): void;
+    /**
+     * Sets the material for a specific node (and all its primitives).
+     * @param nodeName The name of the node (or 'node_<index>' for unnamed nodes)
+     * @param materialIndex The index of the material to use (must be valid in model's material array)
+     */
+    setMaterial(nodeName: string, materialIndex: number): void;
+    /**
+     * Resets all material overrides for this instance, reverting to the model's default materials.
+     */
+    resetMaterials(): void;
 }
 //# sourceMappingURL=Model.d.ts.map

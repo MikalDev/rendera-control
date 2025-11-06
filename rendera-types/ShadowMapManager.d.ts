@@ -167,7 +167,17 @@ export declare class ShadowMapManager {
     cleanup(): void;
     renderInstances(instanceManager: InstanceManager, shadowData: ShadowMapData): void;
     /**
-     * Renders the shadow map for a given light.
+     * Internal method that renders a shadow map without managing GL state.
+     * Used when rendering multiple shadow maps in a frame.
+     *
+     * @param lightId - The ID of the light to render shadows for
+     * @param instanceManager - The instance manager that will render the scene
+     * @throws Error if the shadow map resources aren't initialized
+     * @private
+     */
+    private renderShadowMapInternal;
+    /**
+     * Public method that renders a single shadow map with GL state management.
      * Handles all the setup, rendering, and cleanup for shadow map generation.
      * Preserves WebGL state and restores it after rendering.
      *
@@ -208,10 +218,19 @@ export declare class ShadowMapManager {
     private cleanupGLResources;
     /**
      * Renders shadow maps for all enabled lights.
-     * Iterates over all shadow maps and renders them if the light is enabled.
+     * Optimized to bypass entire shadow stage when no lights cast shadows.
      * @param instanceManager - The instance manager that will render the scene
+     * @param lights - Optional array of lights to check for shadow casting (for early exit optimization)
+     * @returns true if shadows were actually rendered, false if skipped
      */
-    renderAllShadowMaps(instanceManager: InstanceManager): void;
+    renderAllShadowMaps(instanceManager: InstanceManager, lights?: Light[]): boolean;
+    /**
+     * Checks if any lights in the array have shadows enabled.
+     * This is a fast check to determine if shadow rendering is needed at all.
+     * @param lights - Array of lights to check
+     * @returns true if at least one enabled light has castShadows set to true
+     */
+    hasAnyShadowCastingLights(lights: Light[]): boolean;
     /**
      * Updates all shadow maps using the provided array of lights.
      * Iterates over the lights and updates the shadow map for each enabled light that casts shadows.
@@ -276,6 +295,12 @@ export declare class ShadowMapManager {
      * @returns Map of lightId -> shadowMapIndex
      */
     getLightToShadowMapMapping(): Map<number, number>;
+    /**
+     * Checks if any lights are currently casting shadows.
+     * Useful for optimization decisions and debugging.
+     * @returns true if at least one enabled light is casting shadows
+     */
+    hasActiveShadows(): boolean;
     /**
      * Gets shadow data by shadow map index instead of light ID.
      * @param shadowMapIndex - The shadow map index (0-7)

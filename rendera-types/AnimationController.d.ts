@@ -1,12 +1,16 @@
 import { ModelLoader } from './ModelLoader';
-import { InstanceData, AnimationOptions } from './types';
+import { InstanceData, AnimationOptions, AnimationEventCallback } from './types';
 export declare class AnimationController {
     private modelLoader;
     private useWorker;
     private workerManager;
     private instanceCache;
+    private animationCallbacks;
+    private previousAnimationTimes;
+    private previousAnimationNames;
+    private instanceSequence;
     constructor(modelLoader: ModelLoader);
-    setUseWorker(enabled: boolean): void;
+    setUseWorker(enabled: boolean): Promise<void>;
     cacheModelInWorker(modelId: string): Promise<void>;
     private fastSceneTraverse;
     private updateNodeLocalTransforms;
@@ -26,7 +30,12 @@ export declare class AnimationController {
     private findKeyframeIndices;
     private interpolateValues;
     startAnimation(instance: InstanceData, animationName: string, options?: AnimationOptions): void;
+    private captureCurrentTransforms;
+    private packTransformsForWorker;
     stopAnimation(instance: InstanceData): void;
     invalidateCache(instanceId: number): void;
+    registerAnimationCallback(instanceId: number, callback: AnimationEventCallback): void;
+    unregisterAnimationCallback(instanceId: number): void;
+    private fireAnimationEvent;
 }
 //# sourceMappingURL=AnimationController.d.ts.map

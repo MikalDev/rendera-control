@@ -47,6 +47,10 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 	_lastOpacity: number;
 	_lastColorRgb: [number, number, number];
 
+	// Bone position cache for efficiency
+	_bonePositionCache: Map<string, [number, number, number] | null>;
+	_bonePositionCacheTick: number;
+
 	constructor()
 	{
 		super();
@@ -83,7 +87,11 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		// Initialize color and opacity tracking
 		this._lastOpacity = this.opacity;
 		this._lastColorRgb = [this.colorRgb[0], this.colorRgb[1], this.colorRgb[2]];
-		
+
+		// Initialize bone position cache
+		this._bonePositionCache = new Map();
+		this._bonePositionCacheTick = -1;
+
 		// Listen for hierarchy ready event
 		this.addEventListener("hierarchyready", () => {
 			this._onHierarchyReady();
@@ -116,7 +124,7 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 	{
 		// Unregister callbacks first
 		this._unregisterAnimationCallbacks();
-		
+
 		// Clean up model when instance is released
 		if (this._currentModel && globalThis.rendera?.instanceManager)
 		{
@@ -124,10 +132,60 @@ class DrawingInstance extends globalThis.ISDKWorldInstanceBase
 		}
 		this._currentModel = null;
 		this._pendingModelPath = null;
-		
+
 		super._release();
 	}
-	
+
+	_getCachedBonePosition(key: string, fetcher: () => [number, number, number] | null): [number, number, number] | null
+	{
+		const currentTick = this.runtime.tickCount;
+
+		if (this._bonePositionCacheTick !== currentTick)
+		{
+			this._bonePositionCache = new Map();
+			this._bonePositionCacheTick = currentTick;
+		}
+
+		if (this._bonePositionCache.has(key))
+		{
+			return this._bonePositionCache.get(key)!;
+		}
+
+		const position = fetcher();
+		this._bonePositionCache.set(key, position);
+		return position;
+	}
+
+	_getBonePositionByName(boneName: string, axis: number): number
+	{
+		if (!this._currentModel) return 0;
+
+		const instanceManager = globalThis.rendera?.instanceManager;
+		if (!instanceManager) return 0;
+
+		const position = this._getCachedBonePosition(
+			`name:${boneName}`,
+			() => instanceManager.getBoneWorldPosition(this._currentModel!.instanceId.id, boneName)
+		);
+
+		return position ? position[axis] : 0;
+	}
+
+	_getBonePositionByIndex(boneIndex: number, axis: number): number
+	{
+		if (!this._currentModel) return 0;
+
+		const instanceManager = globalThis.rendera?.instanceManager;
+		if (!instanceManager) return 0;
+
+		const position = this._getCachedBonePosition(
+			`index:${boneIndex}`,
+			() => instanceManager.getBoneWorldPositionByIndex(this._currentModel!.instanceId.id, boneIndex)
+		);
+
+		return position ? position[axis] : 0;
+	}
+
 	_onHierarchyReady()
 	{
 		// Handle hierarchy initialization

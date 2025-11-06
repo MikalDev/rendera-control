@@ -284,6 +284,77 @@
 				"id": "last-finished-animation",
 				"expressionName": "LastFinishedAnimation",
 				"returnType": "string"
+			},
+			{
+				"id": "model-path",
+				"expressionName": "ModelPath",
+				"returnType": "string"
+			},
+			{
+				"id": "bone-world-x",
+				"expressionName": "BoneWorldX",
+				"returnType": "number",
+				"params": [
+					{
+						"id": "bone-name",
+						"type": "string"
+					}
+				]
+			},
+			{
+				"id": "bone-world-y",
+				"expressionName": "BoneWorldY",
+				"returnType": "number",
+				"params": [
+					{
+						"id": "bone-name",
+						"type": "string"
+					}
+				]
+			},
+			{
+				"id": "bone-world-z",
+				"expressionName": "BoneWorldZ",
+				"returnType": "number",
+				"params": [
+					{
+						"id": "bone-name",
+						"type": "string"
+					}
+				]
+			},
+			{
+				"id": "bone-world-x-by-index",
+				"expressionName": "BoneWorldXByIndex",
+				"returnType": "number",
+				"params": [
+					{
+						"id": "bone-index",
+						"type": "number"
+					}
+				]
+			},
+			{
+				"id": "bone-world-y-by-index",
+				"expressionName": "BoneWorldYByIndex",
+				"returnType": "number",
+				"params": [
+					{
+						"id": "bone-index",
+						"type": "number"
+					}
+				]
+			},
+			{
+				"id": "bone-world-z-by-index",
+				"expressionName": "BoneWorldZByIndex",
+				"returnType": "number",
+				"params": [
+					{
+						"id": "bone-index",
+						"type": "number"
+					}
+				]
 			}
 		]
 	}

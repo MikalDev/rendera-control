@@ -356,6 +356,70 @@
 					"last-finished-animation": {
 						"description": "Get the name of the last animation that finished playing.",
 						"translated-name": "LastFinishedAnimation"
+					},
+					"model-path": {
+						"description": "Get the file path of the current loaded model.",
+						"translated-name": "ModelPath"
+					},
+					"bone-world-x": {
+						"description": "Get the world X position of a bone by name.",
+						"translated-name": "BoneWorldX",
+						"params": {
+							"bone-name": {
+								"name": "Bone name",
+								"desc": "The name of the bone to get position from."
+							}
+						}
+					},
+					"bone-world-y": {
+						"description": "Get the world Y position of a bone by name.",
+						"translated-name": "BoneWorldY",
+						"params": {
+							"bone-name": {
+								"name": "Bone name",
+								"desc": "The name of the bone to get position from."
+							}
+						}
+					},
+					"bone-world-z": {
+						"description": "Get the world Z position of a bone by name.",
+						"translated-name": "BoneWorldZ",
+						"params": {
+							"bone-name": {
+								"name": "Bone name",
+								"desc": "The name of the bone to get position from."
+							}
+						}
+					},
+					"bone-world-x-by-index": {
+						"description": "Get the world X position of a bone by index.",
+						"translated-name": "BoneWorldXByIndex",
+						"params": {
+							"bone-index": {
+								"name": "Bone index",
+								"desc": "The index of the bone to get position from."
+							}
+						}
+					},
+					"bone-world-y-by-index": {
+						"description": "Get the world Y position of a bone by index.",
+						"translated-name": "BoneWorldYByIndex",
+						"params": {
+							"bone-index": {
+								"name": "Bone index",
+								"desc": "The index of the bone to get position from."
+							}
+						}
+					},
+					"bone-world-z-by-index": {
+						"description": "Get the world Z position of a bone by index.",
+						"translated-name": "BoneWorldZByIndex",
+						"params": {
+							"bone-index": {
+								"name": "Bone index",
+								"desc": "The index of the bone to get position from."
+							}
+						}
 					}
 				}
 			}

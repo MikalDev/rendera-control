@@ -2,7 +2,10 @@ import { Model } from './Model';
 import { Node, Animation, Scene } from '@gltf-transform/core';
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { MaterialSystem } from './MaterialSystem';
+import { WebGLState } from './WebGLStateTracker';
 export declare const MAX_BONES = 256;
+export declare const COORDINATE_CONVERSION_MATRIX: mat4;
+export declare function applyCoordinateConversion(sourceMatrix: mat4): mat4;
 export interface IAnimationTarget {
     updateTransform(path: 'translation' | 'rotation' | 'scale', values: Float32Array): void;
 }
@@ -14,6 +17,10 @@ export interface ExtendedNode extends Node {
     };
 }
 export type Nullable<T> = T | null;
+export interface BoundingSphere {
+    center: [number, number, number];
+    radius: number;
+}
 export interface INodeHierarchy {
     getWorldMatrix(): Float32Array;
     getChildren(): Node[];
@@ -43,6 +50,8 @@ export interface AnimationState {
     animationNodeTransforms: Map<number, NodeTransforms>;
     animationMatrices: Map<number, mat4>;
     boneMatrices: Map<number, Float32Array>;
+    blendSource?: Map<number, NodeTransforms>;
+    blendDuration?: number;
 }
 export interface NodeTransforms {
     rotation: vec4;
@@ -76,6 +85,12 @@ export interface MaterialData {
     uniforms?: Record<string, number | boolean | number[]>;
 }
 export declare const SAMPLER_TEXTURE_UNIT_MAP: Record<string, number>;
+export declare class ShadowAtlasSlot {
+    readonly index: number;
+    readonly pixelOffset: [number, number];
+    readonly resolution: number;
+    constructor(index: number);
+}
 export type SkeletalTransformType = 'translation' | 'rotation' | 'scale';
 export type InterpolationType = 'LINEAR' | 'STEP' | 'CUBICSPLINE';
 export interface InstanceData {
@@ -89,6 +104,9 @@ export interface InstanceData {
     };
     disabledNodes: Set<string>;
     allNodesDisabled: boolean;
+    tintColor: [number, number, number];
+    opacity: number;
+    materialOverrides: Map<string, number>;
 }
 export interface IModelLoader {
     hasModel(modelId: ModelId): boolean;
@@ -102,13 +120,18 @@ export interface IModelLoader {
 export interface IGPUResourceCache {
     cacheModelMode(): void;
     restoreModelMode(): void;
+    getCachedModelState(): WebGLState | null;
 }
 export interface IInstanceManager {
     updateModelAnimation(instance: Model, deltaTime: number): void;
     setModelBindPose(instance: Model): void;
+    startAnimation(instance: Model, animationName: string, options?: AnimationOptions): void;
     markInstanceDirty(instanceId: number): void;
     invalidateAnimationCache(instanceId: number): void;
     enableModelNode(nodeName: string, instance: Model): void;
+    setInstanceMaterial(instance: Model, nodeName: string, materialIndex: number): void;
+    getBoneWorldPosition(instanceId: number, boneName: string): [number, number, number] | null;
+    getBoneWorldPositionByIndex(instanceId: number, boneIndex: number): [number, number, number] | null;
     renderShadowMapInstances(modelId: string, instanceGroup: Set<number>, viewProjection: {
         view: mat4;
         projection: mat4;
@@ -154,6 +177,7 @@ export interface ModelData {
     materialSystem: MaterialSystem;
     nodeArray?: Node[];
     nodeNameMap: Map<string, ExtendedNode>;
+    boundingSphere?: BoundingSphere;
 }
 export interface JointData {
     index: number;
@@ -168,6 +192,22 @@ export interface AnimationOptions {
     blendDuration?: number;
 }
 export type BufferUsage = WebGL2RenderingContext['STATIC_DRAW'] | WebGL2RenderingContext['DYNAMIC_DRAW'];
+export declare enum AnimationEventType {
+    LOOP = "loop",
+    COMPLETE = "complete",
+    START = "start",
+    STOP = "stop"
+}
+export interface AnimationEventData {
+    instanceId: number;
+    modelId: string;
+    animationName: string;
+    eventType: AnimationEventType;
+    currentTime: number;
+    duration: number;
+    progress: number;
+}
+export type AnimationEventCallback = (data: AnimationEventData) => void;
 export interface IGPUResourceManager {
     createBuffer(data: BufferSource, usage: BufferUsage): WebGLBuffer;
     createTexture(image: ImageData | HTMLImageElement | ImageBitmap): WebGLTexture;
@@ -196,6 +236,7 @@ export interface IGPUResourceManager {
     updateBoneUBO(boneMatrices: Float32Array, boneCount: number): void;
     gpuResourceCache: IGPUResourceCache;
     lights: Light[];
+    getWebGLStateTracker?(): any;
 }
 export type AttributeSemantic = 'POSITION' | 'NORMAL' | 'TEXCOORD_0' | 'JOINTS_0' | 'WEIGHTS_0';
 export interface LightBase {
@@ -203,6 +244,10 @@ export interface LightBase {
     color: [number, number, number];
     intensity: number;
     castShadows: boolean;
+    specularIntensity: number;
+    attenuationConstant: number;
+    attenuationLinear: number;
+    attenuationQuadratic?: number;
 }
 export interface PointLight extends LightBase {
     type: 'point';

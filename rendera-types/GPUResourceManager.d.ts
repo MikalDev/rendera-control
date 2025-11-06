@@ -1,10 +1,10 @@
 import { IGPUResourceManager, IGPUResourceCache, Light, ModelData } from './types';
-import { mat4 } from 'gl-matrix';
 import type { ShadowMapManager } from './ShadowMapManager';
 export declare class GPUResourceManager implements IGPUResourceManager {
     private gl;
     private shaderSystem;
     gpuResourceCache: IGPUResourceCache;
+    private uniformCache;
     private static DEBUG_SHADOWS;
     private buffers;
     private textures;
@@ -16,6 +16,10 @@ export declare class GPUResourceManager implements IGPUResourceManager {
     private dirtyLightStates;
     private cameraPosition;
     private dirtyCameraPosition;
+    private giState;
+    private dirtyGIState;
+    private specularState;
+    private dirtySpecularState;
     private boneUBO;
     private readonly BONE_UBO_BINDING_POINT;
     constructor(gl: WebGL2RenderingContext);
@@ -37,9 +41,22 @@ export declare class GPUResourceManager implements IGPUResourceManager {
     getDefaultShader(): WebGLProgram;
     updateLight(index: number, lightParams: Partial<Light>): void;
     updateCameraPosition(position: [number, number, number]): void;
+    setGISkyColor(color: [number, number, number]): void;
+    setGIGroundColor(color: [number, number, number]): void;
+    setGIIntensity(intensity: number): void;
+    setLambertWrap(wrap: number): void;
+    setSpecularEnabled(enabled: boolean): void;
+    setSpecularStrength(strength: number): void;
+    setSpecularShininess(shininess: number): void;
+    setViewPosition(position: [number, number, number]): void;
+    getSpecularEnabled(): boolean;
+    getSpecularStrength(): number;
+    getSpecularShininess(): number;
     setLightEnabled(index: number, enabled: boolean): void;
     private updateLightUniforms;
     private updateCameraPositionUniforms;
+    private updateGIUniforms;
+    private updateSpecularUniforms;
     private updateAllLightUniforms;
     private updateLightEnableStates;
     private getLightTypeValue;
@@ -47,13 +64,10 @@ export declare class GPUResourceManager implements IGPUResourceManager {
     setLightDirection(index: number, direction: [number, number, number]): void;
     setLightColor(index: number, color: [number, number, number]): void;
     setLightIntensity(index: number, intensity: number): void;
+    setLightSpecularIntensity(index: number, specularIntensity: number): void;
     setSpotLightParams(index: number, angle: number, penumbra: number): void;
     setLightCastShadows(index: number, castShadows: boolean): void;
     private validateShadowCount;
-    /**
-     * @deprecated Use setMultipleShadowMapUniforms instead
-     */
-    setShadowMapUniforms(shader: WebGLProgram, enabled: boolean, shadowMap?: WebGLTexture | null, lightViewProjection?: mat4 | null, bias?: number): void;
     /**
      * Sets uniforms for multiple shadow maps using data from ShadowMapManager.
      * This method replaces setShadowMapUniforms for the new multi-shadow architecture.
@@ -69,6 +83,11 @@ export declare class GPUResourceManager implements IGPUResourceManager {
      */
     private createDummyShadowTexture;
     getShadowMapShader(): WebGLProgram;
+    /**
+     * Gets the WebGLStateTracker instance if available
+     * @returns The WebGLStateTracker instance or undefined
+     */
+    getWebGLStateTracker(): any;
 }
 export declare class ShaderSystem {
     private gl;
@@ -76,7 +95,6 @@ export declare class ShaderSystem {
     private programs;
     constructor(gl: WebGL2RenderingContext);
     createProgram(vertexSource: string, fragmentSource: string, name: string): WebGLProgram;
-    useProgram(name: string): void;
     private compileProgram;
     private compileShader;
     private createError;
