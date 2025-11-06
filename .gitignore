@@ -75,3 +75,6 @@ exports/
 
 # Documentation build artifacts
 docs/_build/
+
+# Claude
+.claude/settings.local.json
